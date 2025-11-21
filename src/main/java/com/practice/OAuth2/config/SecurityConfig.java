@@ -96,7 +96,7 @@ public class SecurityConfig {
                     .authenticationEntryPoint(new RestAuthenticationEntryPoint())
                     .and()
                 .authorizeRequests()
-                    .requestMatchers("/",
+                    .requestMatchers("/health",
                         "/error",
                         "/favicon.ico",
                         "/**.png",
