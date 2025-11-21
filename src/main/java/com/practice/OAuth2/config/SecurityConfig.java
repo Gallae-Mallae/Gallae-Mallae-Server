@@ -1,24 +1,19 @@
 package com.practice.OAuth2.config;
 
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.jwk.source.JWKSource;
+
 import com.practice.OAuth2.security.CustomUserDetailsService;
 import com.practice.OAuth2.security.RestAuthenticationEntryPoint;
 import com.practice.OAuth2.security.TokenAuthenticationFilter;
+import com.practice.OAuth2.security.TokenProvider;
 import com.practice.OAuth2.security.oauth2.CustomOAuth2UserService;
 import com.practice.OAuth2.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.practice.OAuth2.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.practice.OAuth2.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -52,11 +47,14 @@ public class SecurityConfig {
 
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
+    private final TokenProvider tokenProvider;
+
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        return new TokenAuthenticationFilter();
+        // [2] 생성자에 필요한 의존성 2개를 넘겨줍니다.
+        return new TokenAuthenticationFilter(tokenProvider, customUserDetailsService);
     }
 
     /*
