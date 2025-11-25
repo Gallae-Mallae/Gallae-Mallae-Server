@@ -9,8 +9,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -43,14 +42,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String token = tokenProvider.createToken(authentication);
 
-        // HttpOnly Cookie 생성
-        Cookie cookie = new Cookie("access_token", token);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true); // JS 접근 불가 (XSS 방지)
-        // cookie.setSecure(true);   // HTTPS 전용 (배포 환경 필수)
-        cookie.setMaxAge((int) appProperties.getAuth().getTokenExpirationMsec() / 1000); // 토큰 유효시간과 쿠키 유효시간 일치
+        ResponseCookie cookie = ResponseCookie.from("access_token", token)
+                .path("/")
+                .httpOnly(true)
+//                .secure(true) // HTTPS 배포 시 필수
+                .maxAge(appProperties.getAuth().getTokenExpirationMsec() / 1000)
+                .sameSite("Lax") // 명시적으로 Lax 설정 (CSRF 방어)
+                .build();
 
-        response.addCookie(cookie);
+        response.addHeader("Set-Cookie", cookie.toString());
 
         clearAuthenticationAttributes(request, response);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
