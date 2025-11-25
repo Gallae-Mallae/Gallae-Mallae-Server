@@ -45,7 +45,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         ResponseCookie cookie = ResponseCookie.from("access_token", token)
                 .path("/")
                 .httpOnly(true)
-//                .secure(true) // HTTPS 배포 시 필수
+                .secure(true) // HTTPS 배포
                 .maxAge(appProperties.getAuth().getTokenExpirationMsec() / 1000)
                 .sameSite("Lax") // 명시적으로 Lax 설정 (CSRF 방어)
                 .build();
