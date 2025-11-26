@@ -1,0 +1,53 @@
+services:
+  cache-server:
+    image: redis
+    ports:
+      - "6379:6379" # 현재 인스턴스(PC)에 6379으로 접근한다면 설치되어 있는 Docker Engine가 6379포트인 컨테이너로 연결
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      retries: 10
+    volumes:
+      - redis_data:/data # 명명된 볼륨(앞에 경로 ./ 안붙임), 도커 내부에서 확인 가능, 로컬에 파일 생성 안됨 (가상의 리눅스 공간에 저장)
+
+  db-server:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1243
+      MYSQL_DATABASE: admin2
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka-container
+    ports:
+      - "9092:9092"
+    environment:
+      # 1. KRaft 모드 활성화 (Zookeeper 제거)
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+
+      # 2. 리스너 설정
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+
+      # 3. 접속 주소 설정 (중요)
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+
+      # 4. 클러스터 설정
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+
+      # 5. 메모리 설정 (여전히 설정해두는 것이 안전함)
+      - KAFKA_HEAP_OPTS=-Xmx400m -Xms400m
+    volumes:
+      - kafka_data:/bitnami/kafka
+
+volumes:
+  redis_data:
+  mysql_data:
+  kafka_data:
