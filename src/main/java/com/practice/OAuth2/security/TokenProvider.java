@@ -25,6 +25,10 @@ public class TokenProvider {
         this.appProperties = appProperties;
     }
 
+    // 리프레시 토큰 유효기간: 14일 (밀리초 단위)
+    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14;
+
+    // 엑세스 토큰 생성
     public String createToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
@@ -38,6 +42,21 @@ public class TokenProvider {
                 .signWith(SignatureAlgorithm.HS512, appProperties.getAuth().getTokenSecret())
                 .compact();
 
+    }
+
+    // 리프레시 토큰 생성
+    public String createRefreshToken(Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + REFRESH_TOKEN_EXPIRE_TIME);
+
+        return Jwts.builder()
+                .setSubject(Long.toString(userPrincipal.getId()))
+                .setIssuedAt(new Date())
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS512, appProperties.getAuth().getTokenSecret())
+                .compact();
     }
 
     public Long getUserIdFromToken(String token) {
