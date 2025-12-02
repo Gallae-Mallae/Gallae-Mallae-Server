@@ -3,6 +3,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,19 +14,24 @@ import lombok.Setter;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Email
-    @Column(nullable = false)
-    private String email;
+    private String nickname;
 
-    private String imageUrl;
+    @Email
+    @Column(nullable = false, unique = true)
+    private String email;
 
     @Column(nullable = false)
     private Boolean emailVerified = false;
+
+    //private String imageUrl;
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
 
     @JsonIgnore
     private String password;
@@ -35,4 +41,8 @@ public class User {
     private AuthProvider provider;
 
     private String providerId;
+
+    //------------------------
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
