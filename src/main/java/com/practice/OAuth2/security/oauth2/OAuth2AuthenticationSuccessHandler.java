@@ -2,7 +2,10 @@ package com.practice.OAuth2.security.oauth2;
 
 import com.practice.OAuth2.config.AppProperties;
 import com.practice.OAuth2.exception.BadRequestException;
+import com.practice.OAuth2.model.RefreshToken;
+import com.practice.OAuth2.repository.RefreshTokenRepository;
 import com.practice.OAuth2.security.TokenProvider;
+import com.practice.OAuth2.security.UserPrincipal;
 import com.practice.OAuth2.util.CookieUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -23,13 +26,15 @@ import static com.practice.OAuth2.security.oauth2.HttpCookieOAuth2AuthorizationR
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler { // 소셜로그인 API
 
     private final TokenProvider tokenProvider;
 
     private final AppProperties appProperties;
 
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+
+    private final RefreshTokenRepository refreshTokenRepository; // Redis Repository 추가
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -40,17 +45,36 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
+        // 엑세스 토큰 생성
         String token = tokenProvider.createToken(authentication);
+        
+        // 리프레시 토큰 생성
+        String refreshToken = tokenProvider.createRefreshToken(authentication);
+
+        // Redis에 Refresh Token 저장
+        // UserPrincipal에서 ID를 꺼내와서 Key로 사용
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal(); // Spring Security가 관리하는 현재 로그인한 사용자 정보(Object)를 우리가 만든 커스텀 객체(UserPrincipal)로 변환
+        refreshTokenRepository.save(new RefreshToken(Long.toString(userPrincipal.getId()), refreshToken));
 
         ResponseCookie cookie = ResponseCookie.from("access_token", token)
                 .path("/")
                 .httpOnly(true)
-//                .secure(true) // HTTPS 배포 시 필수
+                .secure(true) // HTTPS 배포
                 .maxAge(appProperties.getAuth().getTokenExpirationMsec() / 1000)
                 .sameSite("Lax") // 명시적으로 Lax 설정 (CSRF 방어)
                 .build();
 
+        // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .path("/auth/reissue")
+                .httpOnly(true)
+                .secure(true)
+                .maxAge(1209600) // 14일 (초 단위, Redis TTL 따름)
+                .sameSite("Lax")
+                .build();
+
         response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie.toString());
 
         clearAuthenticationAttributes(request, response);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

@@ -37,6 +37,15 @@ public class UserPrincipal implements OAuth2User, UserDetails {
         );
     }
 
+    public static UserPrincipal create(Long id) {
+        return new UserPrincipal(
+                id,
+                "", // email (토큰 생성에 안 쓰임)
+                "", // password (토큰 생성에 안 쓰임)
+                Collections.emptyList() // authorities
+        );
+    }
+
     public static UserPrincipal create(User user, Map<String, Object> attributes) {
         UserPrincipal userPrincipal = UserPrincipal.create(user);
         userPrincipal.setAttributes(attributes);

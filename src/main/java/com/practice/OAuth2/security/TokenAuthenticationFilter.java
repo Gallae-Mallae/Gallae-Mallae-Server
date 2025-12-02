@@ -56,7 +56,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7, bearerToken.length());
         }
 
-        // 2. 헤더에 없으면 쿠키에서 시도 (HttpOnly Cookie)
+        // 브라우저가 보낸 쿠키 응답 (HttpOnly Cookie)
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
