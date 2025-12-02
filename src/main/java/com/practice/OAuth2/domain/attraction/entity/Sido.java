@@ -1,5 +1,6 @@
 package com.practice.OAuth2.domain.attraction.entity;
 
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "sidos")
-public class Sido {
+public class Sido extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "sidos_id")

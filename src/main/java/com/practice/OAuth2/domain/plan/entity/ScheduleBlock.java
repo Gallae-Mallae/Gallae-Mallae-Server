@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.plan.entity;
 
 import com.practice.OAuth2.domain.attraction.entity.Attraction;
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,7 +24,7 @@ import org.hibernate.annotations.Where;
 @Table(name = "schedule_blocks")
 @SQLDelete(sql = "UPDATE schedule_blocks SET deleted_at = NOW() WHERE block_id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class ScheduleBlock {
+public class ScheduleBlock extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "block_id")

@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.scrap.entity;
 
 import com.practice.OAuth2.domain.user.entity.User;
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -22,7 +23,7 @@ import org.hibernate.annotations.Where;
 @Table(name = "scrap_folders")
 @SQLDelete(sql = "UPDATE scrap_folders SET deleted_at = NOW() WHERE folder_id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class ScrapFolder {
+public class ScrapFolder extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "folder_id")
     private Long folderId;

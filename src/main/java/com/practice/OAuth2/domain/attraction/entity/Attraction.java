@@ -1,5 +1,6 @@
 package com.practice.OAuth2.domain.attraction.entity;
 
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "attractions")
-public class Attraction {
+public class Attraction extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "attr_id")

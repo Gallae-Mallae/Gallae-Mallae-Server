@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "place_folders")
-public class PlaceFolder {
+public class PlaceFolder extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "folder_id")

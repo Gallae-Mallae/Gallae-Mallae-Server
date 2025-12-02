@@ -1,5 +1,6 @@
 package com.practice.OAuth2.domain.scrap.entity;
 
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "scraps")
-public class Scrap {
+public class Scrap extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scrap_id")

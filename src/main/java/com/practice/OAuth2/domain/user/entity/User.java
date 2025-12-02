@@ -1,5 +1,6 @@
 package com.practice.OAuth2.domain.user.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +12,7 @@ import lombok.Setter;
 @Entity
 @Getter @Setter
 @Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = "email")})
-public class User {
+public class User extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")

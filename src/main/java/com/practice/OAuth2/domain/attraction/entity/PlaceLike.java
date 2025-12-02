@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.attraction.entity;
 
 import com.practice.OAuth2.domain.user.entity.User;
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -25,7 +26,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
         @UniqueConstraint(columnNames = {"attr_id", "user_id"})
 })
 @EntityListeners(AuditingEntityListener.class)
-public class PlaceLike {
+public class PlaceLike extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "like_id")
     private Long likeId;

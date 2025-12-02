@@ -1,5 +1,6 @@
 package com.practice.OAuth2.domain.attraction.entity;
 
+import com.practice.OAuth2.global.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -24,7 +25,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
         @UniqueConstraint(columnNames = {"folder_id", "attr_id"})
 })
 @EntityListeners(AuditingEntityListener.class)
-public class ConnFolderPlace {
+public class ConnFolderPlace extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
