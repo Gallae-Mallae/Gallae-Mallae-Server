@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.scrap.service;
 
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
+import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
 import com.practice.OAuth2.domain.scrap.dto.ScrapResponse;
 import com.practice.OAuth2.domain.scrap.entity.Scrap;
 import com.practice.OAuth2.domain.scrap.entity.ScrapFolder;
@@ -37,7 +38,7 @@ public class ScrapService {
 
     // 스크랩 생성
     @Transactional
-    public Long createScrap(Long userId, ScrapReqest.CreateScrap req){
+    public Long createScrap(Long userId, Long folderId, ScrapReqest.CreateScrap req){
         ScrapFolder folder = scrapFolderRepository.findById(req.getFolderId())
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
 

@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.scrap.controller;
 
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
+import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
 import com.practice.OAuth2.domain.scrap.dto.ScrapResponse;
 import com.practice.OAuth2.domain.scrap.service.ScrapService;
 import java.util.List;
@@ -36,12 +37,12 @@ public class ScrapController {
     // 스크랩 생성 (폴더 안)
     // 주소: POST /api/scrap-folders/{folderId}/scraps 생각중
     @PostMapping()
-    public ResponseEntity<Long> createScrapFolder(@RequestBody ScrapReqest.CreateScrap req){
+    public ResponseEntity<Long> createScrapFolder(@PathVariable Long folderId, @RequestBody ScrapReqest.CreateScrap req){
 
         // 임시 userId
         Long tempUserId = 1L;
 
-        return ResponseEntity.ok(scrapService.createScrap(tempUserId, req));
+        return ResponseEntity.ok(scrapService.createScrap(tempUserId, folderId, req));
     }
 
     // 조회
