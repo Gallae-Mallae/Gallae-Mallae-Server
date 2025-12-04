@@ -55,6 +55,7 @@ public class ScrapService {
     }
 
     // 조회
+    @Transactional
     public List<ScrapResponse> getScraps(Long folderId){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 없음"));
