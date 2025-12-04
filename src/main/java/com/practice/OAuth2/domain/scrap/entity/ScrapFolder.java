@@ -50,4 +50,10 @@ public class ScrapFolder extends BaseEntity {
         this.description = description;
         // deletedAt은 null이기에 제외
     }
+
+    // update ScrapFolder
+    public void updateScrapFolder(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
 }
