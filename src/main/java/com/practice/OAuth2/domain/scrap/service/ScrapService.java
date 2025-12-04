@@ -39,7 +39,7 @@ public class ScrapService {
     // 스크랩 생성
     @Transactional
     public Long createScrap(Long userId, Long folderId, ScrapReqest.CreateScrap req){
-        ScrapFolder folder = scrapFolderRepository.findById(req.getFolderId())
+        ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
 
         // 내 폴더인지 확인 필요
