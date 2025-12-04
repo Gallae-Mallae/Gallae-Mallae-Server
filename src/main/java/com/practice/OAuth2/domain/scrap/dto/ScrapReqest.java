@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 public class ScrapReqest {
 
-    // scrap 폴더 만들기
+    // scrap folder 만들기
     @Getter
     @NoArgsConstructor
     public static class CreateScrapFolder{
@@ -17,7 +17,6 @@ public class ScrapReqest {
     @Getter
     @NoArgsConstructor
     public static class CreateScrap {
-        private Long folderId;
         private String title;
         private String content;
         private String originLink;
