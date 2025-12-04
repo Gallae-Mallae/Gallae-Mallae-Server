@@ -24,7 +24,7 @@ public class ScrapController {
     // Http Response 받으려고 ResponseEntity사용함
 
     // 폴더 생성
-    // 주소: POST /api/scrap-folders 생각중
+    // 주소: POST /api/scrap-folders 임시
     @PostMapping()
     public ResponseEntity<Long> createScrapFolder(@RequestBody ScrapReqest.CreateScrapFolder req){
 
@@ -35,8 +35,8 @@ public class ScrapController {
     }
 
     // 스크랩 생성 (폴더 안)
-    // 주소: POST /api/scrap-folders/{folderId}/scraps 생각중
-    @PostMapping()
+    // 주소: POST /api/scrap-folders/{folderId}/scraps 임시
+    @PostMapping("/{folderId}/scraps")
     public ResponseEntity<Long> createScrapFolder(@PathVariable Long folderId, @RequestBody ScrapReqest.CreateScrap req){
 
         // 임시 userId
@@ -46,8 +46,8 @@ public class ScrapController {
     }
 
     // 조회
-    // 주소: GET /api/scrap-folders/{folderId}/scraps 생각중
-    @GetMapping()
+    // 주소: GET /api/scrap-folders/{folderId}/scraps 임시
+    @GetMapping("/{folderId}/scraps")
     public ResponseEntity<List<ScrapResponse>> getScraps(@PathVariable Long folderId){
         return ResponseEntity.ok(scrapService.getScraps(folderId));
     }
