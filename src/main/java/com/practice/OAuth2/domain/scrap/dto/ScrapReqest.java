@@ -22,4 +22,22 @@ public class ScrapReqest {
         private String originLink;
         private String imageUrl;
     }
+
+    // scrap 수정하기
+    @Getter
+    @NoArgsConstructor
+    public static class UpdateScrap {
+        private String title;
+        private String content;
+        private String originalLink;
+        private String imageUrl;
+    }
+
+    // scrap folder 수정하기
+    @Getter
+    @NoArgsConstructor
+    public static class UpdateScrapFolder {
+        private String name;
+        private String description;
+    }
 }

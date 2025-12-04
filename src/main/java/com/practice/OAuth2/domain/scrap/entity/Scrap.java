@@ -49,4 +49,12 @@ public class Scrap extends BaseEntity {
         this.originalLink = originalLink;
         this.imageUrl = imageUrl;
     }
+
+    // update Scrap
+    public void updateScrap(String title, String content, String originalLink, String imageUrl) {
+        this.title = title;
+        this.content = content;
+        this.originalLink = originalLink;
+        this.imageUrl = imageUrl;
+    }
 }
