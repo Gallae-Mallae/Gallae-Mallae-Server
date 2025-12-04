@@ -30,7 +30,7 @@ public class ScrapService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 x"));
         ScrapFolder folder = ScrapFolder.builder()
-                //.user(user)
+                .user(user)
                 .name(req.getName())
                 .description(req.getDescription())
                 .build();
