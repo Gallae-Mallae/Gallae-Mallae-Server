@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -38,4 +39,14 @@ public class Scrap extends BaseEntity {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    // 생성자 추가
+    @Builder
+    public Scrap(ScrapFolder scrapFolder, String title, String content, String originalLink, String imageUrl){
+        this.scrapFolder = scrapFolder;
+        this.title = title;
+        this.content = content;
+        this.originalLink = originalLink;
+        this.imageUrl = imageUrl;
+    }
 }

@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -40,4 +41,13 @@ public class ScrapFolder extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // 생성자 추가
+    @Builder
+    public ScrapFolder(User user, String name, String description){
+        this.user = user;
+        this.name = name;
+        this.description = description;
+        // deletedAt은 null이기에 제외
+    }
 }
