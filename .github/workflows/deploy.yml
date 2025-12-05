@@ -1,0 +1,69 @@
+name: Deploy To EC2
+
+on:
+  push:
+    branches:
+      - release # 이 이름의 브랜치에 push 될때 이벤트 발생 (commit)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # 우분투 최신버전
+    steps: # step의 구분명 : id
+      - name: Github Repository 파일 불러오기
+        uses: actions/checkout@v4
+
+      - name: JDK 17버전 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: application.yml 파일 만들기
+        env:
+          APPLICATION_YML_CONTENT: ${{ secrets.APPLICATION_YML }}
+        run: echo "$APPLICATION_YML_CONTENT" > ./src/main/resources/application.yml
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x ./gradlew
+
+      - name: 테스트 및 빌드하기
+        run: ./gradlew clean build
+
+      - name: AWS Resource에 접근할 수 있게 AWS credentials 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # IAM 사용자의 보안 자격 증명의 액세스 키
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: ECR에 로그인하기
+        id: login-ecr # 이 step의 구분명
+        uses: aws-actions/amazon-ecr-login@v2 # 임시 인증 토큰 받음
+
+      - name: Docker 이미지 생성
+        run: docker build -t GM-WAS . # 현재 파일의 위치에 있는 Dockerfile로 빌드 하고 별칭 지정
+
+      - name: Docker 이미지에 Tag 붙이기 # image push를 위해 별칭 추가, [계정ID.dkr.ecr.리전.amazonaws.com]/[이미지명]:[태그] 형식으로 ECR에 push 해야함 (ECR 이미지 이름 규정)
+        run: docker tag GM-WAS ${{ steps.login-ecr.outputs.registry }}/GM-WAS:latest # AWS ECR의 URL주소 참조
+
+      - name: ECR에 Docker 이미지 Push하기
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/GM-WAS:latest
+
+      - name: 압축하기 # S3에 쉽게 전달하기 위해 tar라는 형식으로 압축, 커밋id를 맨앞 이름으로 설정, 현재 파일의 위치에 있는 appspec.yml 과 scripts와 prod.compose.yml 압축, $GITHUB_SHA : 커밋ID
+        run: tar -czvf $GITHUB_SHA.tar.gz appspec.yml scripts prod.compose.yml
+
+      - name: S3에 프로젝트 폴더 업로드하기 # 아시아태평양 서울지역에 현재 위치에 있는 방금 압축한 파일을 s3://(버킷명)/$GITHUB_SHA.tar.gz 로 cp
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.tar.gz s3://gm-cicd-private/$GITHUB_SHA.tar.gz
+
+      # AWS의 CodeDeploy에 만든 애플리케이션에 만든 배포그룹에 "배포생성" 을 수행 하는 명령어
+      # 어떤 애플리케이션을 배포 할것인지 지정
+      # 인스턴스 여러개를 한번에 배포(교체)하겠다고 지정
+      # 어떤 배포그룹에 배포를 할것인지 지정
+      # 버킷명을 알려주고, 압축한 형식을 표현하고, 이 버킷에 어떤 파일을 사용할것인지 지정
+
+      - name: Code Deploy를 활용해 EC2에 프로젝트 코드 배포
+        run: aws deploy create-deployment
+          --application-name GM_CodeDeploy
+          --deployment-config-name CodeDeployDefault.AllAtOnce
+          --deployment-group-name GM_DeployGroup
+          --s3-location bucket=gm-cicd-private,bundleType=tgz,key=$GITHUB_SHA.tar.gz
