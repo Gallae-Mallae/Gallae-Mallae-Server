@@ -1,6 +1,7 @@
 name: Deploy To EC2
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - release # 이 이름의 브랜치에 push 될때 이벤트 발생 (commit)
