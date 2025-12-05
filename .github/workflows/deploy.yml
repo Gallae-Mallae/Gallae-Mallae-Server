@@ -41,13 +41,13 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2 # 임시 인증 토큰 받음
 
       - name: Docker 이미지 생성
-        run: docker build -t gm-was . # 현재 파일의 위치에 있는 Dockerfile로 빌드 하고 별칭 지정
+        run: docker build -t gallaemallae . # 현재 파일의 위치에 있는 Dockerfile로 빌드 하고 별칭 지정
 
       - name: Docker 이미지에 Tag 붙이기 # image push를 위해 별칭 추가, [계정ID.dkr.ecr.리전.amazonaws.com]/[이미지명]:[태그] 형식으로 ECR에 push 해야함 (ECR 이미지 이름 규정)
-        run: docker tag gm-was ${{ steps.login-ecr.outputs.registry }}/gm-was:latest # AWS ECR의 URL주소 참조
+        run: docker tag gallaemallae ${{ steps.login-ecr.outputs.registry }}/gallaemallae:latest # AWS ECR의 URL주소 참조
 
       - name: ECR에 Docker 이미지 Push하기
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/gm-was:latest
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/gallaemallae:latest
 
       - name: 압축하기 # S3에 쉽게 전달하기 위해 tar라는 형식으로 압축, 커밋id를 맨앞 이름으로 설정, 현재 파일의 위치에 있는 appspec.yml 과 scripts와 prod.compose.yml 압축, $GITHUB_SHA : 커밋ID
         run: tar -czvf $GITHUB_SHA.tar.gz appspec.yml scripts prod.compose.yml
