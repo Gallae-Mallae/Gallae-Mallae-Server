@@ -1,0 +1,19 @@
+version: 0.0
+os: linux
+
+files:
+  # CodeDeploy가 S3에서 가져온 전체(/) 파일(prod.compose.yml, scripts, appspec.yml)을
+  - source: /
+    # EC2의 지정된 경로로 복사
+    destination: /home/ubuntu/Gallae-Mallae-Server
+
+permissions: # CodeDeploy 권한
+  - object: /
+    owner: ubuntu
+    group: ubuntu
+
+hooks:
+  ApplicationStart: # 애플리케이션이 시작될때 할 작업
+    - location: scripts/start-server.sh # 리눅스 명령어가 모여있는 쉘 스크립트를 실행하여 서버 배포
+      timeout: 180
+      runas: ubuntu
