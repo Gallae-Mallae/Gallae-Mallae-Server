@@ -49,7 +49,7 @@ jobs:
       - name: ECR에 Docker 이미지 Push하기
         run: docker push ${{ steps.login-ecr.outputs.registry }}/GM-WAS:latest
 
-      - name: 압축하기 # S3에 쉽게 전달하기 위해 tar라는 형식으로 압축, 커밋id를 맨앞 이름으로 설정, 현재 파일의 위치에 있는 appspec.yml 과 scripts 를 압축, $GITHUB_SHA : 커밋ID
+      - name: 압축하기 # S3에 쉽게 전달하기 위해 tar라는 형식으로 압축, 커밋id를 맨앞 이름으로 설정, 현재 파일의 위치에 있는 appspec.yml 과 scripts와 prod.compose.yml 압축, $GITHUB_SHA : 커밋ID
         run: tar -czvf $GITHUB_SHA.tar.gz appspec.yml scripts prod.compose.yml
 
       - name: S3에 프로젝트 폴더 업로드하기 # 아시아태평양 서울지역에 현재 위치에 있는 방금 압축한 파일을 s3://(버킷명)/$GITHUB_SHA.tar.gz 로 cp
