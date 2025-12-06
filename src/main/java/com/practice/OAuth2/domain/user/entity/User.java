@@ -18,32 +18,32 @@ public class User extends BaseEntity{
     @Column(name = "user_id")
     private Long userId;
 
+    @Email
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false, unique = true)
     private String name;
 
     private String nickname;
 
-    @Email
-    @Column(nullable = false, unique = true)
-    private String email;
+    private String password;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+
+    @Column(name = "provider_id")
+    private String providerId;
 
     @Column(nullable = false)
     private Boolean emailVerified = false;
 
-    //private String imageUrl;
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
-
-    @JsonIgnore
-    private String password;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private AuthProvider provider;
-
-    private String providerId;
-
-    //------------------------
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // 생성자 추가 필요
 }
