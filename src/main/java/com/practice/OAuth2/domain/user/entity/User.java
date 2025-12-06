@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.*;
 
 
 @Entity
@@ -39,11 +39,10 @@ public class User extends BaseEntity{
     @Column(name = "provider_id")
     private String providerId;
 
-    @Column(nullable = false)
-    private Boolean emailVerified = false;
+//    @Column(nullable = false)
+//    private Boolean emailVerified = false;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    // 생성자 추가 필요
 }
