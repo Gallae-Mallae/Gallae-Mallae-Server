@@ -35,13 +35,16 @@ public class ScheduleBlock extends BaseEntity {
     private Plan plan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attr_id", nullable = false)
+    @JoinColumn(name = "attr_id")
     private Attraction attraction;
 
     private Integer day;
 
     @Column(columnDefinition = "int DEFAULT 0")
     private Integer sequence;
+
+    @Column(length = 100)
+    private String title;
 
     @Column(name = "simple_memo", columnDefinition = "TEXT")
     private String simpleMemo;
