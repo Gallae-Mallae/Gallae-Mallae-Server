@@ -11,6 +11,7 @@ public class ScrapReqest {
     public static class CreateScrapFolder{
         private String name;
         private String description;
+        private String folderImageUrl;
     }
 
     // scrap 만들기
@@ -19,7 +20,7 @@ public class ScrapReqest {
     public static class CreateScrap {
         private String title;
         private String content;
-        private String originLink;
+        private String originalLink;
         private String imageUrl;
     }
 
@@ -39,5 +40,6 @@ public class ScrapReqest {
     public static class UpdateScrapFolder {
         private String name;
         private String description;
+        private String folderImageUrl;
     }
 }

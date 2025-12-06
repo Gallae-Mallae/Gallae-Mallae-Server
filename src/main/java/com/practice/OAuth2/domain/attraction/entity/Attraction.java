@@ -70,9 +70,9 @@ public class Attraction extends BaseEntity {
     @Column(length = 12)
     private String geohash;
 
-    @Column(name = "view_count", columnDefinition = "int DEFAULT 0")
-    private Integer viewCount;
+    @Column(name = "view_count", columnDefinition = "bigint DEFAULT 0")
+    private Long viewCount;
 
-    @Column(name = "like_count", columnDefinition = "int DEFAULT 0")
-    private Integer likeCount;
+    @Column(name = "like_count", columnDefinition = "bigint DEFAULT 0")
+    private Long likeCount;
 }
