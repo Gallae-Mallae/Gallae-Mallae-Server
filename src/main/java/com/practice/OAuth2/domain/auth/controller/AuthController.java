@@ -38,7 +38,7 @@ import java.net.URI;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {  // 우리 서비스 자체 로그인 시스템 API ( 리프레쉬 관련 재발급 코드, 로그아웃 코드 포함)
 
@@ -140,7 +140,7 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
 
         // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-                .path("/auth/reissue")
+                .path("/api/auth/reissue")
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(refreshAge)

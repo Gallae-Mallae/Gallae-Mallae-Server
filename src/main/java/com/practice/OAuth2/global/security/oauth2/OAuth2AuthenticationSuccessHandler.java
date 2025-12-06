@@ -66,7 +66,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-                .path("/auth/reissue")
+                .path("/api/auth/reissue")
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(1209600) // 14일 (초 단위, Redis TTL 따름)
