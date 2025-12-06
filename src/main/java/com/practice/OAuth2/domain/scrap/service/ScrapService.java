@@ -33,7 +33,9 @@ public class ScrapService {
                 .user(user)
                 .name(req.getName())
                 .description(req.getDescription())
+                .folderImageUrl(req.getFolderImageUrl())
                 .build();
+
         return scrapFolderRepository.save(folder).getFolderId();
     }
 
@@ -49,7 +51,7 @@ public class ScrapService {
                 .scrapFolder(folder)
                 .title(req.getTitle())
                 .content(req.getContent())
-                .originalLink(req.getOriginLink())
+                .originalLink(req.getOriginalLink())
                 .imageUrl(req.getImageUrl())
                 .build();
         return scrapRepository.save(scrap).getScrapId();
@@ -85,7 +87,7 @@ public class ScrapService {
 
         // user 통해서 폴더 주인 확인로직 추가 필요
 
-        folder.updateScrapFolder(req.getName(), req.getDescription());
+        folder.updateScrapFolder(req.getName(), req.getDescription(), req.getFolderImageUrl());
     }
 
     // 폴더 삭제
