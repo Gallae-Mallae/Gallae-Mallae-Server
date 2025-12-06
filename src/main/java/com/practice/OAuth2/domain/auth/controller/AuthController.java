@@ -135,7 +135,7 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(accessAge)
-                .sameSite("Lax")
+//                .sameSite("Lax")
                 .build();
 
         // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
@@ -144,7 +144,7 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(refreshAge)
-                .sameSite("Lax")
+//                .sameSite("Lax")
                 .build();
 
         response.addHeader("Set-Cookie", accessCookie.toString());
