@@ -1,5 +1,7 @@
 package com.practice.OAuth2.domain.auth.controller;
 
+import com.practice.OAuth2.domain.auth.dto.TokenResponse;
+import com.practice.OAuth2.domain.auth.service.AuthService;
 import com.practice.OAuth2.global.config.AppProperties;
 import com.practice.OAuth2.global.exception.BadRequestException;
 import com.practice.OAuth2.domain.user.entity.AuthProvider;
@@ -14,6 +16,7 @@ import com.practice.OAuth2.domain.user.repository.UserRepository;
 import com.practice.OAuth2.global.security.TokenProvider;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import com.practice.OAuth2.global.util.CookieUtils;
+import com.practice.OAuth2.global.util.TokenCookieManager;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,18 +43,10 @@ import java.util.Collections;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {  // 우리 서비스 자체 로그인 시스템 API ( 리프레쉬 관련 재발급 코드, 로그아웃 코드 포함)
+public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-
-    private final UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder;
-
-    private final TokenProvider tokenProvider;
-
-    private final RefreshTokenRepository refreshTokenRepository;
-
+    private final AuthService authService;
+    private final TokenCookieManager tokenCookieManager;
     private final AppProperties appProperties;
     
     // 소셜 로그인 유저라도 Access Token(30분)이 만료되면 프런트엔드가 이 API를 호출해서 연명 치료를 해야함
@@ -62,48 +57,16 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
                 .map(Cookie::getValue)
                 .orElse(null);
 
-        // 리프레시 토큰 존재 여부
-        if (refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("리프레시 토큰이 없습니다.");
-        }
+        // 서비스단 예외 발생 시 GlobalHandler 로 처리
+        TokenResponse tokenResponse = authService.reissue(refreshToken);
 
-        // 리프레시토큰 유효성 검사 체크
-        if (!tokenProvider.validateToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 리프레시 토큰입니다.");
-        }
-
-        // 브라우저에게 쿠키로 받은 리프레시 토큰과 Redis 저장소(TTL: 14일)에 있는 리프레시토큰을 비교
-        String userId = String.valueOf(tokenProvider.getUserIdFromToken(refreshToken));
-        
-        // 속도를 위해 PK (id) 사용
-        RefreshToken redisToken = refreshTokenRepository.findById(userId).orElse(null);
-
-        if (redisToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("리프레시 토큰의 유효기간이 만료되었습니다.");
-        }
-
-        if (!redisToken.getToken().equals(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 리프레시 토큰입니다.");
-        }
-
-        // 새 토큰 생성을 위한 Authentication 객체 생성 (ID만 있으면 됨)
-        // TokenProvider는 토큰을 만들 때 Authentication 안에 있는 UserPrincipal을 꺼내고, 그 안의 id를 써서 토큰을 만들도록 되어있음
-        UserDetails principal = UserPrincipal.create(Long.parseLong(userId));
-        Authentication authentication = new UsernamePasswordAuthenticationToken(principal, null, Collections.emptyList());
-
-        // 새 토큰 발급 (RTR: Refresh Token도 새로 발급)
-        String newAccessToken = tokenProvider.createToken(authentication);
-        String newRefreshToken = tokenProvider.createRefreshToken(authentication);
-
-        // 6. Redis 업데이트
-        refreshTokenRepository.save(new RefreshToken(userId, newRefreshToken));
-
-        // 7. 쿠키 갱신
+        // 쿠키 시간 설정
         long accessTokenExpiry = appProperties.getAuth().getTokenExpirationMsec() / 1000;
         long refreshTokenExpiry = 1209600; // 14일
 
         // 응답 헤더에 쿠키를 Set-Cookie (새로 발급받은 엑세스,리프레시 토큰)
-        setTokenCookies(response, newAccessToken, newRefreshToken, accessTokenExpiry, refreshTokenExpiry);
+        tokenCookieManager.addTokenCookies(response, tokenResponse.getAccessToken(),
+                tokenResponse.getRefreshToken(), accessTokenExpiry, refreshTokenExpiry);
 
         return ResponseEntity.status(HttpStatus.OK).body("토큰 재발급 완료.");
     }
@@ -111,43 +74,15 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = CookieUtils.getCookie(request, "refresh_token")
+                .map(Cookie::getValue)
+                .orElse(null);
 
+        authService.logout(refreshToken);
 
-        // 브라우저가 보낸 쿠키 중 리프레시 토큰 조회
-        String refreshToken = CookieUtils.getCookie(request, "refresh_token").map(Cookie::getValue).orElse(null);
+        tokenCookieManager.deleteTokenCookies(response);
 
-        // 리프레시 토큰이 있고 이게 유효하다면 -> 레디스캐시 Repository의 리프레시 토큰 삭제
-        if (refreshToken != null && tokenProvider.validateToken(refreshToken)) {
-            String userId = String.valueOf(tokenProvider.getUserIdFromToken(refreshToken));
-            refreshTokenRepository.deleteById(userId);
-        }
-
-        // 응답 헤더에 쿠키를 Set-Cookie (Max-Age = 0)
-        setTokenCookies(response, "", "", 0, 0);
-
-        return new ResponseEntity<>("로그아웃 되었습니다", HttpStatus.OK);
+        return ResponseEntity.ok("로그아웃 되었습니다");
     }
 
-    // 클라이언트에게 헤더에 응답쿠키를 설정하여 응답하는 메서드 -> 브라우저가 관리할 쿠키 설정
-    private void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken, long accessAge, long refreshAge) {
-        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
-                .path("/")
-                .httpOnly(true)
-                .secure(true)
-                .maxAge(accessAge)
-//                .sameSite("Lax")
-                .build();
-
-        // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-                .path("/api/auth/reissue")
-                .httpOnly(true)
-                .secure(true)
-                .maxAge(refreshAge)
-//                .sameSite("Lax")
-                .build();
-
-        response.addHeader("Set-Cookie", accessCookie.toString());
-        response.addHeader("Set-Cookie", refreshCookie.toString());
-    }
 }
