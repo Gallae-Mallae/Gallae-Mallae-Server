@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.*;
 
 
 @Entity
@@ -18,32 +18,31 @@ public class User extends BaseEntity{
     @Column(name = "user_id")
     private Long userId;
 
+    @Email
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false, unique = true)
     private String name;
 
     private String nickname;
 
-    @Email
-    @Column(nullable = false, unique = true)
-    private String email;
+    private String password;
 
-    @Column(nullable = false)
-    private Boolean emailVerified = false;
-
-    //private String imageUrl;
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    @JsonIgnore
-    private String password;
-
-    @NotNull
+    @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;
 
+    @Column(name = "provider_id")
     private String providerId;
 
-    //------------------------
+//    @Column(nullable = false)
+//    private Boolean emailVerified = false;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
 }
