@@ -42,11 +42,6 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class AuthController {  // 우리 서비스 자체 로그인 시스템 API ( 리프레쉬 관련 재발급 코드, 로그아웃 코드 포함)
 
-    private final AuthenticationManager authenticationManager;
-
-    private final UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder;
 
     private final TokenProvider tokenProvider;
 
@@ -135,7 +130,7 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(accessAge)
-//                .sameSite("Lax")
+                .sameSite("None") // 명시적으로 Lax 설정 (CSRF 방어) -> 개발 단계에서는 일단 프런트 배포 이전이므로 같은 도메인만 허용 해제
                 .build();
 
         // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
@@ -144,7 +139,7 @@ public class AuthController {  // 우리 서비스 자체 로그인 시스템 AP
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(refreshAge)
-//                .sameSite("Lax")
+                .sameSite("None") // 명시적으로 Lax 설정 (CSRF 방어) -> 개발 단계에서는 일단 프런트 배포 이전이므로 같은 도메인만 허용 해제
                 .build();
 
         response.addHeader("Set-Cookie", accessCookie.toString());

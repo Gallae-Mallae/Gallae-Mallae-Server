@@ -61,7 +61,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .httpOnly(true)
                 .secure(true) // HTTPS 배포
                 .maxAge(appProperties.getAuth().getTokenExpirationMsec() / 1000)
-//                .sameSite("Lax") // 명시적으로 Lax 설정 (CSRF 방어)
+                .sameSite("None") // 명시적으로 Lax 설정 (CSRF 방어) -> 개발 단계에서는 일단 프런트 배포 이전이므로 같은 도메인만 허용 해제
                 .build();
 
         // Refresh Token 쿠키 설정 (14일), 재발급 요청에만 브라우저가 보내게함
@@ -70,7 +70,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(1209600) // 14일 (초 단위, Redis TTL 따름)
-//                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
