@@ -9,7 +9,7 @@ public class TokenCookieManager {
 
     private static final String ACCESS_TOKEN_NAME = "access_token";
     private static final String REFRESH_TOKEN_NAME = "refresh_token";
-    private static final String REFRESH_TOKEN_PATH = "/api/auth/reissue";
+    private static final String REFRESH_TOKEN_PATH = "/api/auth";
 
     // 토큰 쿠키 굽기 (로그인, 재발급 용)
     public void addTokenCookies(HttpServletResponse response, String accessToken, String refreshToken, long accessAge, long refreshAge) {
@@ -19,7 +19,7 @@ public class TokenCookieManager {
                 .httpOnly(true)
                 .secure(true) // HTTPS 필수
                 .maxAge(accessAge)
-                .sameSite("Lax") // 프런트 배포 이전에 테스트용으로 lax 해제
+                .sameSite("None") // 프런트 배포 이전에 테스트용으로 lax 해제
                 .build();
 
         // Refresh Token
@@ -28,7 +28,7 @@ public class TokenCookieManager {
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(refreshAge) // 브라우저 꺼도 유지됨 (Persistent Cookie)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         response.addHeader("Set-Cookie", accessCookie.toString());
@@ -42,7 +42,7 @@ public class TokenCookieManager {
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_TOKEN_NAME, "")
@@ -50,7 +50,7 @@ public class TokenCookieManager {
                 .httpOnly(true)
                 .secure(true)
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         response.addHeader("Set-Cookie", accessCookie.toString());
