@@ -9,7 +9,7 @@ public class TokenCookieManager {
 
     private static final String ACCESS_TOKEN_NAME = "access_token";
     private static final String REFRESH_TOKEN_NAME = "refresh_token";
-    private static final String REFRESH_TOKEN_PATH = "/api/auth/reissue";
+    private static final String REFRESH_TOKEN_PATH = "/api/auth";
 
     // 토큰 쿠키 굽기 (로그인, 재발급 용)
     public void addTokenCookies(HttpServletResponse response, String accessToken, String refreshToken, long accessAge, long refreshAge) {
