@@ -15,4 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Boolean existsByEmail(String email);
 
+    // 닉네임 중복 체크 등에 사용
+    Boolean existsByNickname(String nickname);
+
 }

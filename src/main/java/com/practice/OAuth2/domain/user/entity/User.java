@@ -45,4 +45,8 @@ public class User extends BaseEntity{
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    public void updateUserProfile(String nickname, String profileImageUrl) {
+        this.nickname = nickname;
+        this.profileImageUrl = profileImageUrl;
+    }
 }
