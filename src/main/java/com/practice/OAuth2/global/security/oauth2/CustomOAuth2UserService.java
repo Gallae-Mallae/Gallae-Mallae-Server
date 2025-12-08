@@ -87,14 +87,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return null; // 복구할 대상이 x-> 신규 가입 필요
     }
 
+    // 빌더패턴으로 수정
     private User registerNewUser(OAuth2UserRequest oAuth2UserRequest, OAuth2UserInfo oAuth2UserInfo) {
-        User user = new User();
+        AuthProvider provider = AuthProvider.valueOf(oAuth2UserRequest.getClientRegistration().getRegistrationId());
 
-        user.setProvider(AuthProvider.valueOf(oAuth2UserRequest.getClientRegistration().getRegistrationId()));
-        user.setProviderId(oAuth2UserInfo.getId());
-        user.setName(oAuth2UserInfo.getName());
-        user.setEmail(oAuth2UserInfo.getEmail());
-        user.setProfileImageUrl(oAuth2UserInfo.getImageUrl());
+        User user = User.builder()
+                .provider(provider)
+                .providerId(oAuth2UserInfo.getId())
+                .name(oAuth2UserInfo.getName())
+                .email(oAuth2UserInfo.getEmail())
+                .profileImageUrl(oAuth2UserInfo.getImageUrl())
+                .build();
+
         return userRepository.save(user);
     }
 
