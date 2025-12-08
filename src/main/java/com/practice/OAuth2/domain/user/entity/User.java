@@ -7,10 +7,17 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 
 @Entity
 @Getter @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_id = ?")
+@Where(clause = "deleted_at IS NULL")
 @Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = "email")})
 public class User extends BaseEntity{
     @Id
@@ -39,14 +46,26 @@ public class User extends BaseEntity{
     @Column(name = "provider_id")
     private String providerId;
 
-//    @Column(nullable = false)
-//    private Boolean emailVerified = false;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean emailVerified = false;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public void updateUserProfile(String nickname, String profileImageUrl) {
+    @Builder
+    public User(String email, String name, String nickname, String password, AuthProvider provider, String providerId, String profileImageUrl) {
+        this.email = email;
+        this.name = name;
         this.nickname = nickname;
+        this.password = password;
+        this.provider = provider;
+        this.providerId = providerId;
         this.profileImageUrl = profileImageUrl;
+        this.emailVerified = false;
+    }
+
+    public void updateUserProfile(String nickname) {
+        this.nickname = nickname;
     }
 }
