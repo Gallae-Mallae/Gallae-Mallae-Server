@@ -25,12 +25,12 @@ public class UserInfoService {
         return UserInfoResponse.from(user);
     }
 
-    // 프로필 수정
+    // 닉네임 수정
     public UserInfoResponse updateUserProfile(UserPrincipal userPrincipal, UserInfoRequest.updateUserProfile req  ){
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
 
-        user.updateUserProfile(req.getNickname(), req.getProfileImageUrl()  );
+        user.updateUserProfile(req.getNickname() );
         return UserInfoResponse.from(user);
     }
 

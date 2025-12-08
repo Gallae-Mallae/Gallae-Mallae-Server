@@ -9,6 +9,5 @@ public class UserInfoRequest {
     @NoArgsConstructor
     public static class updateUserProfile{
         private String nickname;
-        private String profileImageUrl;
     }
 }

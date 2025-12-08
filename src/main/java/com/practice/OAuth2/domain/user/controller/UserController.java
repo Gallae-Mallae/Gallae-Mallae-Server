@@ -33,7 +33,7 @@ public class UserController {
         return ResponseEntity.ok(userInfoService.getCurrentUser(userPrincipal));
     }
 
-    // 프로필 수정
+    // 닉네임 수정
     @PatchMapping("/me")
     public ResponseEntity<UserInfoResponse> updateUserProfile(@CurrentUser UserPrincipal userPrincipal,
             @RequestBody UserInfoRequest.updateUserProfile req) {
