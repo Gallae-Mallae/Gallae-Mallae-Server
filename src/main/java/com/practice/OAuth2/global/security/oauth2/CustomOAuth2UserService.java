@@ -7,6 +7,8 @@ import com.practice.OAuth2.domain.user.repository.UserRepository;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import com.practice.OAuth2.global.security.oauth2.user.OAuth2UserInfo;
 import com.practice.OAuth2.global.security.oauth2.user.OAuth2UserInfoFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
@@ -57,20 +59,46 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
             user = updateExistingUser(user, oAuth2UserInfo);
         } else {
-            user = registerNewUser(oAuth2UserRequest, oAuth2UserInfo);
+            // (추가) 탈퇴한 유저인지 확인
+            user = restoreIfDeleted(oAuth2UserInfo.getEmail());
+
+            if (user != null) {
+                // 탈퇴한 유저 복구 후 업데이트
+                user = updateExistingUser(user, oAuth2UserInfo);
+            } else {
+                // 아예 없는 유저 -> 신규 가입
+                user = registerNewUser(oAuth2UserRequest, oAuth2UserInfo);
+            }
         }
 
         return UserPrincipal.create(user, oAuth2User.getAttributes());
     }
 
-    private User registerNewUser(OAuth2UserRequest oAuth2UserRequest, OAuth2UserInfo oAuth2UserInfo) {
-        User user = new User();
+    // (추가) 탈퇴한 유저 복구 메서드
+    private User restoreIfDeleted(String email) {
+        // 복구 쿼리 실행 (업데이트된 행의 개수 반환)
+        int updatedCount = userRepository.restoreUser(email);
 
-        user.setProvider(AuthProvider.valueOf(oAuth2UserRequest.getClientRegistration().getRegistrationId()));
-        user.setProviderId(oAuth2UserInfo.getId());
-        user.setName(oAuth2UserInfo.getName());
-        user.setEmail(oAuth2UserInfo.getEmail());
-        user.setProfileImageUrl(oAuth2UserInfo.getImageUrl());
+        if (updatedCount > 0) {
+            // 복구됐으면(1건 이상 업데이트) 해당 유저 정보를 조회해서 반환
+            // 이제 deleted_at이 NULL이 되었으므로 findByEmail로 조회가 가능
+            return userRepository.findByEmail(email).orElse(null);
+        }
+        return null; // 복구할 대상이 x-> 신규 가입 필요
+    }
+
+    // 빌더패턴으로 수정
+    private User registerNewUser(OAuth2UserRequest oAuth2UserRequest, OAuth2UserInfo oAuth2UserInfo) {
+        AuthProvider provider = AuthProvider.valueOf(oAuth2UserRequest.getClientRegistration().getRegistrationId());
+
+        User user = User.builder()
+                .provider(provider)
+                .providerId(oAuth2UserInfo.getId())
+                .name(oAuth2UserInfo.getName())
+                .email(oAuth2UserInfo.getEmail())
+                .profileImageUrl(oAuth2UserInfo.getImageUrl())
+                .build();
+
         return userRepository.save(user);
     }
 
