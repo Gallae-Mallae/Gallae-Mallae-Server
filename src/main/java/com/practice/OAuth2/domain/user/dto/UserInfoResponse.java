@@ -2,6 +2,7 @@ package com.practice.OAuth2.domain.user.dto;
 
 import com.practice.OAuth2.domain.user.entity.AuthProvider;
 import com.practice.OAuth2.domain.user.entity.User;
+import com.practice.OAuth2.global.config.AppProperties.Auth;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,7 +23,7 @@ public class UserInfoResponse {
     private String name;
     private String nickname;
     private String profileImageUrl;
-    private LocalDateTime deletedAt;
+    private AuthProvider provider;
 
     public static UserInfoResponse from(User user) {
         return UserInfoResponse.builder()
@@ -31,7 +32,7 @@ public class UserInfoResponse {
                 .name(user.getName())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
-                .deletedAt(user.getDeletedAt())
+                .provider(user.getProvider())
                 .build();
     }
 }

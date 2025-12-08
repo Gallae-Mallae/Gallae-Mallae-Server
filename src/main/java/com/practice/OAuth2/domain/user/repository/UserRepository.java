@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // 로그인 시 필요
     Optional<User> findByEmail(String email);
 
     Boolean existsByEmail(String email);
