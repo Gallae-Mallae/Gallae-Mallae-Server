@@ -46,6 +46,7 @@ public class ScrapService {
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
 
         // 내 폴더인지 확인 필요
+        validateFolderOwnership(folder, userId);
 
         Scrap scrap = Scrap.builder()
                 .scrapFolder(folder)
@@ -86,6 +87,7 @@ public class ScrapService {
                 .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
 
         // user 통해서 폴더 주인 확인로직 추가 필요
+        validateFolderOwnership(folder, userId);
 
         folder.updateScrapFolder(req.getName(), req.getDescription(), req.getFolderImageUrl());
     }
@@ -97,6 +99,7 @@ public class ScrapService {
                 .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
 
         // 권한 체크
+        validateFolderOwnership(folder, userId);
 
         // Soft Delete (@SQLDelete) 작동(자동으로)
         scrapFolderRepository.delete(folder);
@@ -109,6 +112,7 @@ public class ScrapService {
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
 
         // 권한 확인
+        validateScrapOwnership(scrap, userId);
 
         scrap.updateScrap(req.getTitle(), req.getContent(), req.getOriginalLink(), req.getImageUrl());
     }
@@ -120,7 +124,22 @@ public class ScrapService {
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
 
         // User 통해서 폴더 주인 확인로직 추가 필요
+        validateScrapOwnership(scrap, userId);
 
         scrapRepository.delete(scrap);
+    }
+
+    // 폴더의 주인이 현재 로그인한 유저인지 확인
+    private void validateFolderOwnership(ScrapFolder folder, Long userId) {
+        if (!folder.getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("해당 폴더에 대한 권한이 없습니다.");
+        }
+    }
+
+    // 스크램 -> 폴더 -> 유저 : 로 확인
+    private void validateScrapOwnership(Scrap scrap, Long userId) {
+        if (!scrap.getScrapFolder().getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("해당 스크랩에 대한 권한이 없습니다.");
+        }
     }
 }
