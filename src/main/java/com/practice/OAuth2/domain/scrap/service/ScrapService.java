@@ -24,7 +24,7 @@ public class ScrapService {
     private final ScrapRepository scrapRepository;
     private final UserRepository userRepository;
 
-    // scrap folder 생성
+    // 스크랩 폴더 생성
     @Transactional
     public Long createScrapFolder(Long userId, ScrapReqest.CreateScrapFolder req){
         User user = userRepository.findById(userId)
@@ -39,13 +39,47 @@ public class ScrapService {
         return scrapFolderRepository.save(folder).getFolderId();
     }
 
-    // scrap 생성
+    // 스크랩 폴더 조회
+    public List<ScrapFolderResponse> getScrapFolders(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 x"));
+
+        // 유저가 만든 폴더들 다 찾아오기
+        return scrapFolderRepository.findByUser(user).stream()
+                .map(ScrapFolderResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    // 스크랩 폴더 수정
+    @Transactional
+    public void updateScrapFolder(Long userId, Long folderId, ScrapReqest.UpdateScrapFolder req) {
+        ScrapFolder folder = scrapFolderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
+
+        validateFolderOwnership(folder, userId);
+
+        folder.updateScrapFolder(req.getName(), req.getDescription(), req.getFolderImageUrl());
+    }
+
+    // 스크랩 폴더 삭제
+    @Transactional
+    public void deleteScrapFolder(Long userId, Long folderId) {
+        ScrapFolder folder = scrapFolderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
+
+        validateFolderOwnership(folder, userId);
+
+        // Soft Delete (@SQLDelete) 작동(자동으로)
+        scrapFolderRepository.delete(folder);
+    }
+
+    //--------------------------------------------------------------------------------------------
+    // 스크랩 생성
     @Transactional
     public Long createScrap(Long userId, Long folderId, ScrapReqest.CreateScrap req){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
 
-        // 내 폴더인지 확인 필요
         validateFolderOwnership(folder, userId);
 
         Scrap scrap = Scrap.builder()
@@ -58,18 +92,7 @@ public class ScrapService {
         return scrapRepository.save(scrap).getScrapId();
     }
 
-    // scrap folder 조회
-    public List<ScrapFolderResponse> getScrapFolders(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유저 x"));
-
-        // 유저가 만든 폴더들 다 찾아오기
-        return scrapFolderRepository.findByUser(user).stream()
-                .map(ScrapFolderResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    // scrap 조회
+    // 스크랩 조회
     @Transactional
     public List<ScrapResponse> getScraps(Long userId, Long folderId){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
@@ -80,31 +103,6 @@ public class ScrapService {
         return scrapRepository.findByScrapFolder(folder).stream()
                 .map(ScrapResponse::from)
                 .collect(Collectors.toList());
-    }
-
-    // 폴더 수정
-    @Transactional
-    public void updateScrapFolder(Long userId, Long folderId, ScrapReqest.UpdateScrapFolder req) {
-        ScrapFolder folder = scrapFolderRepository.findById(folderId)
-                .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
-
-        // user 통해서 폴더 주인 확인로직 추가 필요
-        validateFolderOwnership(folder, userId);
-
-        folder.updateScrapFolder(req.getName(), req.getDescription(), req.getFolderImageUrl());
-    }
-
-    // 폴더 삭제
-    @Transactional
-    public void deleteScrapFolder(Long userId, Long folderId) {
-        ScrapFolder folder = scrapFolderRepository.findById(folderId)
-                .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
-
-        // 권한 체크
-        validateFolderOwnership(folder, userId);
-
-        // Soft Delete (@SQLDelete) 작동(자동으로)
-        scrapFolderRepository.delete(folder);
     }
 
     // 스크랩 수정
@@ -125,12 +123,12 @@ public class ScrapService {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
 
-        // User 통해서 폴더 주인 확인로직 추가 필요
         validateScrapOwnership(scrap, userId);
 
         scrapRepository.delete(scrap);
     }
 
+    //-------------------------------------------------------------------------------------------------
     // 폴더의 주인이 현재 로그인한 유저인지 확인
     private void validateFolderOwnership(ScrapFolder folder, Long userId) {
         if (!folder.getUser().getUserId().equals(userId)) {
