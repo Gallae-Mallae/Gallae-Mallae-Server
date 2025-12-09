@@ -17,7 +17,7 @@ public class TokenCookieManager {
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN_NAME, accessToken)
                 .path("/")
                 .httpOnly(true)
-                .secure(false) // HTTPS 필수
+                .secure(true) // HTTPS 필수
                 .maxAge(accessAge)
                 .sameSite("None") // 프런트 배포 이전에 테스트용으로 lax 해제
                 .build();
@@ -26,7 +26,7 @@ public class TokenCookieManager {
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_TOKEN_NAME, refreshToken)
                 .path(REFRESH_TOKEN_PATH) // 재발급 경로에만 전송
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .maxAge(refreshAge) // 브라우저 꺼도 유지됨 (Persistent Cookie)
                 .sameSite("None")
                 .build();
@@ -40,7 +40,7 @@ public class TokenCookieManager {
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN_NAME, "")
                 .path("/")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .maxAge(0)
                 .sameSite("None")
                 .build();
@@ -48,7 +48,7 @@ public class TokenCookieManager {
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_TOKEN_NAME, "")
                 .path(REFRESH_TOKEN_PATH)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .maxAge(0)
                 .sameSite("None")
                 .build();
