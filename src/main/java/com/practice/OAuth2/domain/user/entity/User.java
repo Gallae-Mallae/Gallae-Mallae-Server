@@ -12,10 +12,8 @@ import org.hibernate.annotations.Where;
 
 
 @Entity
-@Getter @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_id = ?")
 @Where(clause = "deleted_at IS NULL")
 @Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = "email")})
@@ -46,7 +44,6 @@ public class User extends BaseEntity{
     @Column(name = "provider_id")
     private String providerId;
 
-    @Builder.Default
     @Column(nullable = false)
     private Boolean emailVerified = false;
 
