@@ -58,8 +58,10 @@ public class ScrapController {
     // 스크랩 조회
     // 주소: GET /api/scrap-folders/{folderId}/scraps 임시
     @GetMapping("/{folderId}/scraps")
-    public ResponseEntity<List<ScrapResponse>> getScraps(@PathVariable Long folderId){
-        return ResponseEntity.ok(scrapService.getScraps(folderId));
+    public ResponseEntity<List<ScrapResponse>> getScraps(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long folderId){
+        return ResponseEntity.ok(scrapService.getScraps(principal.getId(), folderId));
     }
 
     // 폴더 수정

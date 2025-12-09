@@ -71,9 +71,11 @@ public class ScrapService {
 
     // scrap 조회
     @Transactional
-    public List<ScrapResponse> getScraps(Long folderId){
+    public List<ScrapResponse> getScraps(Long userId, Long folderId){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 없음"));
+
+        validateFolderOwnership(folder, userId);
 
         return scrapRepository.findByScrapFolder(folder).stream()
                 .map(ScrapResponse::from)
@@ -136,7 +138,7 @@ public class ScrapService {
         }
     }
 
-    // 스크램 -> 폴더 -> 유저 : 로 확인
+    // 스크랩 -> 폴더 -> 유저 : 로 확인
     private void validateScrapOwnership(Scrap scrap, Long userId) {
         if (!scrap.getScrapFolder().getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("해당 스크랩에 대한 권한이 없습니다.");
