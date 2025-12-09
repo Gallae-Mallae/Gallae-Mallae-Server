@@ -25,19 +25,6 @@ public class AppProperties {
     @Getter
     public static final class OAuth2 {
         private List<String> authorizedRedirectUris = new ArrayList<>();
-
-        private Kakao kakao = new Kakao();
-
-        @Setter
-        @Getter
-        public static class Kakao {
-            private String logoutUri;         // app.oauth2.kakao.logout-uri 매핑
-            private String logoutRedirectUri; // app.oauth2.kakao.logout-redirect-uri 매핑
-
-            private String clientId;
-
-        }
-
     }
 
 }

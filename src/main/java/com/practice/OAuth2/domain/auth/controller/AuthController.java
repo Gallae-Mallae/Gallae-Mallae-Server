@@ -84,17 +84,7 @@ public class AuthController {
 
         tokenCookieManager.deleteTokenCookies(response);
 
-        String kakaoLogoutUri = appProperties.getOauth2().getKakao().getLogoutUri();
-        String logoutRedirectUri = appProperties.getOauth2().getKakao().getLogoutRedirectUri();
-
-        AppProperties.OAuth2.Kakao kakaoConfig = appProperties.getOauth2().getKakao();
-
-        String clientId = kakaoConfig.getClientId(); // 여기서 바로 꺼냄!
-        String finalKakaoLogoutUrl = kakaoLogoutUri
-                + "?client_id=" + clientId
-                + "&logout_redirect_uri=" + logoutRedirectUri;
-
-        return ResponseEntity.ok().body(Collections.singletonMap("kakaoLogoutUrl", finalKakaoLogoutUrl));
+        return ResponseEntity.ok().body("로그아웃 성공");
     }
 
 }
