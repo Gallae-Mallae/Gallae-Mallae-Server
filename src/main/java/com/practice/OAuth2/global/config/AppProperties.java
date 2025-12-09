@@ -1,54 +1,43 @@
 package com.practice.OAuth2.global.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 @ConfigurationProperties(prefix = "app") // yml의 app 으로 시작하는 설정을 매핑
 public class AppProperties {
     private final Auth auth = new Auth();
     private final OAuth2 oauth2 = new OAuth2();
 
+    @Setter
+    @Getter
     public static class Auth {
         private String tokenSecret;
         private long tokenExpirationMsec; // yml의 tokenExpirationMsec와 자동 매핑 (Setter 필요)
 
-        public String getTokenSecret() {
-            return tokenSecret;
-        }
-
-        public void setTokenSecret(String tokenSecret) {
-            this.tokenSecret = tokenSecret;
-        }
-
-        public long getTokenExpirationMsec() {
-            return tokenExpirationMsec;
-        }
-
-        public void setTokenExpirationMsec(long tokenExpirationMsec) {
-            this.tokenExpirationMsec = tokenExpirationMsec;
-        }
     }
 
+    @Setter
+    @Getter
     public static final class OAuth2 {
         private List<String> authorizedRedirectUris = new ArrayList<>();
 
-        public List<String> getAuthorizedRedirectUris() {
-            return authorizedRedirectUris;
+        private Kakao kakao = new Kakao();
+
+        @Setter
+        @Getter
+        public static class Kakao {
+            private String logoutUri;         // app.oauth2.kakao.logout-uri 매핑
+            private String logoutRedirectUri; // app.oauth2.kakao.logout-redirect-uri 매핑
+
+            private String clientId;
+
         }
 
-        public OAuth2 authorizedRedirectUris(List<String> authorizedRedirectUris) {
-            this.authorizedRedirectUris = authorizedRedirectUris;
-            return this;
-        }
     }
 
-    public Auth getAuth() {
-        return auth;
-    }
-
-    public OAuth2 getOauth2() {
-        return oauth2;
-    }
 }

@@ -31,6 +31,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +49,7 @@ public class AuthController {
     private final AuthService authService;
     private final TokenCookieManager tokenCookieManager;
     private final AppProperties appProperties;
+
     
     // 소셜 로그인 유저라도 Access Token(30분)이 만료되면 프런트엔드가 이 API를 호출해서 연명 치료를 해야함
     @PostMapping("/reissue")
@@ -82,7 +84,17 @@ public class AuthController {
 
         tokenCookieManager.deleteTokenCookies(response);
 
-        return ResponseEntity.ok("로그아웃 되었습니다");
+        String kakaoLogoutUri = appProperties.getOauth2().getKakao().getLogoutUri();
+        String logoutRedirectUri = appProperties.getOauth2().getKakao().getLogoutRedirectUri();
+
+        AppProperties.OAuth2.Kakao kakaoConfig = appProperties.getOauth2().getKakao();
+
+        String clientId = kakaoConfig.getClientId(); // 여기서 바로 꺼냄!
+        String finalKakaoLogoutUrl = kakaoLogoutUri
+                + "?client_id=" + clientId
+                + "&logout_redirect_uri=" + logoutRedirectUri;
+
+        return ResponseEntity.ok().body(Collections.singletonMap("kakaoLogoutUrl", finalKakaoLogoutUrl));
     }
 
 }
