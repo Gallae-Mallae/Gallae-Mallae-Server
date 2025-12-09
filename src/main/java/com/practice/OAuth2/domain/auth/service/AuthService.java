@@ -25,7 +25,7 @@ public class AuthService {
     @Transactional
     public TokenResponse reissue(String refreshToken) {
         if (refreshToken == null) {
-            throw new BadRequestException("리프레시 토큰이 없습니다.");
+            throw new BadRequestException("리프레시 토큰을 받지 못했습니다.");
         }
 
         if (!tokenProvider.validateToken(refreshToken)) {
@@ -38,10 +38,8 @@ public class AuthService {
         RefreshToken redisToken = refreshTokenRepository.findById(userId).orElse(null);
 
         if (redisToken == null) {
-            // Redis 에 리프레시토큰 유효기간 만료
             throw new BadRequestException("만료된 리프레시 토큰입니다.");
         } else if (!redisToken.getToken().equals(refreshToken)) {
-            // 사용자의 브라우저 쿠키의 리프레시 토큰이 Redis 와 다름 (브라우저 종료 후 새 브라우저로 접속 시)
             throw new BadRequestException("리프레시 토큰이 만료되었습니다.");
         }
 
