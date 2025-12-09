@@ -12,7 +12,7 @@ import org.hibernate.annotations.Where;
 
 
 @Entity
-@Getter
+@Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_id = ?")
 @Where(clause = "deleted_at IS NULL")
