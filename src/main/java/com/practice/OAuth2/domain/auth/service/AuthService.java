@@ -7,6 +7,7 @@ import com.practice.OAuth2.global.exception.BadRequestException;
 import com.practice.OAuth2.global.security.TokenProvider;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-@Service
+@Service @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -32,15 +33,15 @@ public class AuthService {
             throw new BadRequestException("리프레시 토큰을 받지 못했습니다.");
         }
 
-        // 방금 사용된(만료된) 토큰이지만, 10초의 유예기간 안에는 허용
+        // 10초 유예기간 캐시저장소의 키 이름 설정 : 어떤 Old Token(파라미터로 온 refreshToken)이 요청했는지를 식별하기 위함
         String graceKey = "grace_period:" + refreshToken;
 
-        // 캐시에서 조회 (있으면 캐스팅해서 바로 반환)
+        /* 레디스 캐시저장소에 Old Token(파라미터로 온 refreshToken) 이름이 포함된 키를 가진 캐시 엔트리가 존재한다면
+           1등이 Old Token 을 써서 재발급 했었다는 뜻 -> 이 캐시 엔트리는 재발급된 리프레시 토큰이므로 바로 이 데이터 응답,
+           캐시엔트리 유예기간 : 10초 설정 */
         TokenResponse cachedToken = (TokenResponse) redisTemplate.opsForValue().get(graceKey);
-
         if (cachedToken != null) {
-            // 로그를 찍어두면 디버깅에 좋습니다.
-            System.out.println(" 적중: 기존에 발급된 토큰을 반환합니다.");
+            log.info("Grace Period 적중");
             return cachedToken;
         }
 
@@ -70,7 +71,7 @@ public class AuthService {
         String newAccessToken = tokenProvider.createToken(authentication);
         String newRefreshToken = tokenProvider.createRefreshToken(authentication);
 
-        // 5. Redis 업데이트
+        // Redis 업데이트
         refreshTokenRepository.save(new RefreshToken(userId, newRefreshToken));
 
         TokenResponse tokenResponse = TokenResponse.builder()
@@ -78,7 +79,7 @@ public class AuthService {
                 .refreshToken(newRefreshToken)
                 .build();
 
-        // Old Token(refreshToken)으로 10초 내에 또 요청이 오면, 이 New Token(tokenResponse)을 반환
+        // 1등이 Old Token(파라미터로 온 refreshToken) 이름이 포함된 키에 재발급한 리프레시 토큰을 value 로 설정
         redisTemplate.opsForValue().set(graceKey, tokenResponse, 10, TimeUnit.SECONDS);
 
         return tokenResponse;
