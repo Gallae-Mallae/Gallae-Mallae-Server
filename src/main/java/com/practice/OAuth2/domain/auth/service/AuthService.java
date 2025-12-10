@@ -7,6 +7,7 @@ import com.practice.OAuth2.global.exception.BadRequestException;
 import com.practice.OAuth2.global.security.TokenProvider;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +24,24 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
 
+    private final RedisTemplate<String, Object> redisTemplate;
+
     @Transactional
     public TokenResponse reissue(String refreshToken) {
         if (refreshToken == null) {
             throw new BadRequestException("리프레시 토큰을 받지 못했습니다.");
+        }
+
+        // 방금 사용된(만료된) 토큰이지만, 10초의 유예기간 안에는 허용
+        String graceKey = "grace_period:" + refreshToken;
+
+        // 캐시에서 조회 (있으면 캐스팅해서 바로 반환)
+        TokenResponse cachedToken = (TokenResponse) redisTemplate.opsForValue().get(graceKey);
+
+        if (cachedToken != null) {
+            // 로그를 찍어두면 디버깅에 좋습니다.
+            System.out.println(" 적중: 기존에 발급된 토큰을 반환합니다.");
+            return cachedToken;
         }
 
         if (!tokenProvider.validateToken(refreshToken)) {
@@ -57,10 +73,15 @@ public class AuthService {
         // 5. Redis 업데이트
         refreshTokenRepository.save(new RefreshToken(userId, newRefreshToken));
 
-        return TokenResponse.builder()
+        TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
+
+        // Old Token(refreshToken)으로 10초 내에 또 요청이 오면, 이 New Token(tokenResponse)을 반환
+        redisTemplate.opsForValue().set(graceKey, tokenResponse, 10, TimeUnit.SECONDS);
+
+        return tokenResponse;
     }
 
     @Transactional
