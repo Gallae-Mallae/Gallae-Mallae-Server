@@ -52,4 +52,9 @@ public class ScheduleBlock extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void changePosition(Integer day, LocalTime startTime) {
+        this.day = day;
+        this.startTime = startTime;
+    }
 }

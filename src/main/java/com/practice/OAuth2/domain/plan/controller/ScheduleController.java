@@ -1,0 +1,41 @@
+package com.practice.OAuth2.domain.plan.controller;
+
+import com.practice.OAuth2.domain.plan.dto.ScheduleMoveRequest;
+import com.practice.OAuth2.domain.plan.service.ScheduleService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/schedules")
+public class ScheduleController {
+
+    private final ScheduleService scheduleService;
+
+    // 스케줄 이동
+    @PatchMapping("/{blockId}/position")
+    public ResponseEntity<Void> moveScheduleBlock(
+            @PathVariable Long blockId,
+            @RequestBody ScheduleMoveRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long userId = Long.parseLong(userDetails.getUsername());
+
+        // DB 수정 -> STOMP 전송
+        scheduleService.moveScheduleBlock(
+                userId,
+                blockId,
+                request.getNewDay(),
+                request.getNewStartTime()
+        );
+
+        return ResponseEntity.ok().build();
+    }
+}
