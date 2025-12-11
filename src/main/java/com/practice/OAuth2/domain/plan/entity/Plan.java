@@ -13,6 +13,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -20,7 +23,7 @@ import org.hibernate.annotations.Where;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "plans")
 @SQLDelete(sql = "UPDATE plans SET deleted_at = NOW() WHERE plan_id = ?")
 @Where(clause = "deleted_at IS NULL")
@@ -29,10 +32,6 @@ public class Plan extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "plan_id")
     private Long planId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
 
     @Column(nullable = false, length = 100)
     private String title;
@@ -43,15 +42,23 @@ public class Plan extends BaseEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(length = 50)
-    private String region;
-
     @Column(name = "plan_image_url")
     private String planImageUrl;
 
-    @Column(name = "is_share", columnDefinition = "tinyint(1) DEFAULT 0")
-    private Boolean isShare;
+    // 추가: STOMP 방 입장/초대용 코드 (랜덤 UUID)
+    @Column(name = "invite_code", nullable = false, unique = true)
+    private String inviteCode;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Builder
+    public Plan(String title, LocalDate startDate, LocalDate endDate, String region, String planImageUrl) {
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.planImageUrl = planImageUrl;
+        // 생성 시 초대코드 자동 발급
+        this.inviteCode = UUID.randomUUID().toString();
+    }
 }

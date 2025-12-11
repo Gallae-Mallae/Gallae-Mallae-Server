@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -40,10 +41,23 @@ public class PlanMember extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(length = 20)
-    private String role;
+    // 추가: 방 나가기 기능 (NULL이면 참여 중)
+    @Column(name = "left_at")
+    private LocalDateTime leftAt;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    @Builder
+    public PlanMember(Plan plan, User user) {
+        this.plan = plan;
+        this.user = user;
+    }
+
+    //  방 나가기 (Soft Delete와 유사)
+    public void exitPlan() {
+        this.leftAt = LocalDateTime.now();
+    }
+
+    //  재입장
+    public void reJoin() {
+        this.leftAt = null;
+    }
 }
