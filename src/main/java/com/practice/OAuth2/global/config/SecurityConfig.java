@@ -104,6 +104,8 @@ public class SecurityConfig {
                         .permitAll()
                     .requestMatchers( "/api/auth/**", "/oauth2/**")
                         .permitAll()
+                    .requestMatchers("/ws/**")
+                        .permitAll()
                     .anyRequest()
                         .authenticated()
                     .and()
