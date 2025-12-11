@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.practice.OAuth2.domain.plan.dto.ScheduleBlockResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -48,8 +49,10 @@ public class ScheduleService {
 
         scheduleBlockRepository.save(block);
 
+        // 엔티티 -> DTO 변환 후 전송
+        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
         // [STOMP] 생성된 블록 정보를 방 전체에 전송 (Type: CREATE)
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/create", block);
+        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/create", response);
     }
 
     // 블록 크기 조절
@@ -62,7 +65,9 @@ public class ScheduleService {
 
         // [STOMP] 변경된 정보 전송 (Type: UPDATE)
         Long planId = block.getPlan().getPlanId();
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/update", block);
+
+        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/update", response);
     }
 
     // 블록 이동
@@ -80,9 +85,10 @@ public class ScheduleService {
         // "10번 방의 스케줄이 변경되었으니, 새로고침"
         Long planId = block.getPlan().getPlanId();
 
+        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
         // 변경된 블록 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
         // "UPDATE"라는 신호와 함께 변경된 블록 정보를 보냄
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules", block);
+        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules", response);
     }
 
 
