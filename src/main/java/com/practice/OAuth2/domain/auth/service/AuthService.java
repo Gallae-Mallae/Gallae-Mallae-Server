@@ -33,6 +33,8 @@ public class AuthService {
             throw new BadRequestException("리프레시 토큰을 받지 못했습니다.");
         }
 
+        // ============================== Grace Period 검증 시작 ======================================
+
         // 10초 유예기간 캐시저장소의 키 이름 설정 : 어떤 Old Token(파라미터로 온 refreshToken)이 요청했는지를 식별하기 위함
         String graceKey = "grace_period:" + refreshToken;
 
@@ -44,6 +46,8 @@ public class AuthService {
             log.info("Grace Period 캐싱 적중");
             return cachedToken;
         }
+
+        // ============================== Grace Period 검증 끝 ======================================
 
         if (!tokenProvider.validateToken(refreshToken)) {
             throw new BadRequestException("유효하지 않은 리프레시 토큰입니다.");
@@ -72,8 +76,9 @@ public class AuthService {
         String newAccessToken = tokenProvider.createToken(authentication);
         String newRefreshToken = tokenProvider.createRefreshToken(authentication);
 
-        // Race Condition 체크 시작 : 현재 쓰레드가 재발급 로직을 수행하는 동안,
-        // 그 사이에 다른 쓰레드가 재발급 로직을 수행 하고 DB 작업 까지도 수행했는지
+        //================================ Race Condition 체크 시작 =====================================
+
+        // 현재 쓰레드가 재발급 로직을 수행하는 동안 그 사이에 다른 쓰레드가 재발급 로직을 수행 하고 DB 작업 까지도 수행했는지
 
         // 재발급 로직 이후에 다시 oldTokenUserId 로 토큰 가져옴
         RefreshToken currentRedisToken = refreshTokenRepository.findById(oldTokenUserId).orElse(null);
@@ -89,7 +94,11 @@ public class AuthService {
             } else {
                 throw new BadRequestException("이미 갱신된 토큰입니다. 다시 시도해주세요.");
             }
-        } // Race Condition 체크 끝, 아래 부터는 1등 쓰레드만이 접근 가능한 코드
+        }
+
+        //================================ Race Condition 체크 끝 =====================================
+
+        // 아래의 Redis 반영은 경쟁 상태가 발생해도 상관없는 구조
 
         // Redis 업데이트 (1등 쓰레드만이 Grace Period 적중이 안되고 Race Condition 감지도 안되어져서 DB 작업 수행)
         refreshTokenRepository.save(new RefreshToken(oldTokenUserId, newRefreshToken));
@@ -99,6 +108,7 @@ public class AuthService {
                 .refreshToken(newRefreshToken)
                 .build();
 
+        // Grace_period 설정
         // 1등이 Old Token(파라미터로 온 refreshToken) 이름이 포함된 키에 재발급한 리프레시 토큰을 value 로 설정
         // 트랜잭셔널 없으므로 즉시 반영
         redisTemplate.opsForValue().set(graceKey, tokenResponse, 10, TimeUnit.SECONDS);
