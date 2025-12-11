@@ -13,6 +13,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
@@ -20,7 +23,9 @@ import org.hibernate.annotations.Where;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 @Table(name = "schedule_blocks")
 @SQLDelete(sql = "UPDATE schedule_blocks SET deleted_at = NOW() WHERE block_id = ?")
 @Where(clause = "deleted_at IS NULL")
@@ -53,8 +58,14 @@ public class ScheduleBlock extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // 블록 옮기기
     public void changePosition(Integer day, LocalTime startTime) {
         this.day = day;
         this.startTime = startTime;
+    }
+
+    // 블록 시간 조정하기
+    public void updateEndTime(LocalTime endTime) {
+        this.endTime = endTime;
     }
 }

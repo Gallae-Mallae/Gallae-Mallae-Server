@@ -1,6 +1,11 @@
 package com.practice.OAuth2.domain.plan.service;
 
+import com.practice.OAuth2.domain.attraction.entity.Attraction;
+import com.practice.OAuth2.domain.attraction.repository.AttractionRepository;
+import com.practice.OAuth2.domain.plan.dto.ScheduleCreateRequest;
+import com.practice.OAuth2.domain.plan.entity.Plan;
 import com.practice.OAuth2.domain.plan.entity.ScheduleBlock;
+import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.plan.repository.ScheduleBlockRepository;
 import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +19,53 @@ import org.springframework.transaction.annotation.Transactional;
 // 스케줄 블록을 옮겼을 때, publish 하기
 public class ScheduleService {
 
+    private final PlanRepository planRepository;
+    private final AttractionRepository attractionRepository;
     private final ScheduleBlockRepository scheduleBlockRepository;
-
     private final SimpMessagingTemplate messagingTemplate;
 
+    // 블록 생성
+    public void createScheduleBlock(Long planId, ScheduleCreateRequest request) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+
+        // 장소 정보 조회 (null일 수 있음)
+        Attraction attraction = null;
+        if (request.getAttractionId() != null) {
+            attraction = attractionRepository.findById(request.getAttractionId())
+                    .orElse(null);
+        }
+
+        // 엔티티 생성 (기본 30분 설정)
+        ScheduleBlock block = ScheduleBlock.builder()
+                .plan(plan)
+                .attraction(attraction)
+                .day(request.getDay())
+                .startTime(request.getStartTime())
+                .endTime(request.getStartTime().plusMinutes(30)) // 기본 30분
+                .title(request.getTitle()) // 장소명이거나 사용자 입력 제목
+                .build();
+
+        scheduleBlockRepository.save(block);
+
+        // [STOMP] 생성된 블록 정보를 방 전체에 전송 (Type: CREATE)
+        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/create", block);
+    }
+
+    // 블록 크기 조절
+    public void resizeScheduleBlock(Long blockId, LocalTime newEndTime) {
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
+
+        // 시간 업데이트 (엔티티 내부에 updateEndTime 메서드 필요)
+        block.updateEndTime(newEndTime);
+
+        // [STOMP] 변경된 정보 전송 (Type: UPDATE)
+        Long planId = block.getPlan().getPlanId();
+        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/update", block);
+    }
+
+    // 블록 이동
     public void moveScheduleBlock(Long userId, Long blockId, Integer newDay, LocalTime newStartTime) {
         // 1. 블록 조회
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
