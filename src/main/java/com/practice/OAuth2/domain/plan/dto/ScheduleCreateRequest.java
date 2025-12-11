@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ScheduleCreateRequest {
-    private Attraction attraction;
+    private Integer attractionId;
     private Integer day;
     private String title;
     private LocalTime startTime;
