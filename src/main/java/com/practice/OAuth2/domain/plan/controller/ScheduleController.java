@@ -4,6 +4,8 @@ import com.practice.OAuth2.domain.plan.dto.ScheduleCreateRequest;
 import com.practice.OAuth2.domain.plan.dto.ScheduleMoveRequest;
 import com.practice.OAuth2.domain.plan.dto.ScheduleResizeRequest;
 import com.practice.OAuth2.domain.plan.service.ScheduleService;
+import com.practice.OAuth2.domain.user.entity.User;
+import com.practice.OAuth2.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
+    private final UserRepository userRepository;
 
     // 스케줄 블록 생성
     @PostMapping("/{planId}")
@@ -49,7 +52,11 @@ public class ScheduleController {
             @RequestBody ScheduleMoveRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        String email = userDetails.getUsername();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
+        Long userId = user.getUserId();
 
         // DB 수정 -> STOMP 전송
         scheduleService.moveScheduleBlock(
