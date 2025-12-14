@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -33,4 +34,11 @@ public class PlaceFolder extends BaseEntity{
 
     @Column(length = 20)
     private String color;
+
+    @Builder
+    public PlaceFolder(User user, String name, String color) {
+        this.user = user;
+        this.name = name;
+        this.color = color;
+    }
 }
