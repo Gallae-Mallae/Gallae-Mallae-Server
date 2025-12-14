@@ -102,7 +102,7 @@ public class SecurityConfig {
                         "/**.css",
                         "/**.js")
                         .permitAll()
-                    .requestMatchers( "/api/auth/**", "/oauth2/**")
+                    .requestMatchers( "/api/auth/**", "/oauth2/**","/api/attractions/**")
                         .permitAll()
                     .requestMatchers("/ws/**")
                         .permitAll()

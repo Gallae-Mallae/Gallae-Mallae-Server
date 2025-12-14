@@ -1,9 +1,14 @@
 package com.practice.OAuth2.domain.attraction.dto;
 
 import com.practice.OAuth2.domain.attraction.entity.Attraction;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Getter
+@Data              // 1. Getter, Setter 다 만들어줌 (마이바티스가 데이터 넣을 때 필요)
+@NoArgsConstructor // 2. 빈 생성자 만들어줌 (마이바티스가 객체 생성할 때 필요)
+@AllArgsConstructor // 3. 모든 필드 생성자 만들어줌
 public class AttractionResponse {
     private Integer attractionId;
     private String title;         // 장소명
