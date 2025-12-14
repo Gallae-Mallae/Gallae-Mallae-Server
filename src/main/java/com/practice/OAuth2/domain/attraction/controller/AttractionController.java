@@ -22,4 +22,17 @@ public class AttractionController {
         List<AttractionResponse> results = attractionService.searchAttractions(keyword);
         return ResponseEntity.ok(results);
     }
+
+
+
+
+    // MyBatis 연결 테스트용
+    // 접속 주소: http://localhost:8080/api/attractions/mybatis-test
+    @GetMapping("/mybatis-test")
+    public ResponseEntity<List<AttractionResponse>> testMyBatis() {
+        List<AttractionResponse> results = attractionService.getAttractionListTest();
+        return ResponseEntity.ok(results);
+    }
+
+
 }
