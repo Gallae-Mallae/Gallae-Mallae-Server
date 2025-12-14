@@ -7,12 +7,14 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor @Getter
 public class PlaceFolderResponse {
+    private Long placeFolderId;
     private String name;
     private String color;
     private Integer counts;
 
     @Builder
-    public PlaceFolderResponse(String name, String color, Integer counts) {
+    public PlaceFolderResponse(Long placeFolderId, String name, String color, Integer counts) {
+        this.placeFolderId = placeFolderId;
         this.name = name;
         this.color = color;
         this.counts = counts;
@@ -20,6 +22,7 @@ public class PlaceFolderResponse {
 
     public static PlaceFolderResponse from(PlaceFolder placeFolder) {
         return PlaceFolderResponse.builder()
+                .placeFolderId(placeFolder.getFolderId())
                 .name(placeFolder.getName())
                 .color(placeFolder.getColor())
                 .counts(placeFolder.getConnFolderPlaces().size())
