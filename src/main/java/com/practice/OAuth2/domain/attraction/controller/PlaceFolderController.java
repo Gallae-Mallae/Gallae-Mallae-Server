@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.attraction.controller;
 
 import com.practice.OAuth2.domain.attraction.dto.PlaceFolderCreateRequest;
+import com.practice.OAuth2.domain.attraction.dto.PlaceFolderInfoResponse;
 import com.practice.OAuth2.domain.attraction.dto.PlaceFolderResponse;
 import com.practice.OAuth2.domain.attraction.service.PlaceFolderService;
 import com.practice.OAuth2.global.security.CurrentUser;
@@ -32,6 +33,14 @@ public class PlaceFolderController {
     public ResponseEntity<List<PlaceFolderResponse>> getFolderList(@CurrentUser UserPrincipal userPrincipal) {
 
         List<PlaceFolderResponse> response = placeFolderService.getFolderList(userPrincipal);
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{place_foldersId}")
+    public ResponseEntity<List<PlaceFolderInfoResponse>> getFolderInfo(@CurrentUser UserPrincipal userPrincipal,
+                                                                 @PathVariable("place_foldersId") Long placeFolderId) {
+        List<PlaceFolderInfoResponse> response = placeFolderService.getFolderInfo(userPrincipal ,placeFolderId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
