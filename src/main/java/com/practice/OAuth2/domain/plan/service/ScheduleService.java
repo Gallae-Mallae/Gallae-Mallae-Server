@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.cache.CacheProperties.Redis;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -132,6 +133,36 @@ public class ScheduleService {
             // "UPDATE"라는 신호와 함께 변경된 블록 정보를 보냄
             sendStompMessage(planId, "BLOCK_MOVED", response);
         }finally{
+            unlock(lockKey);
+        }
+    }
+
+    // 블록 삭제
+    public void deleteScheduleBlock(Long userId, Long blockId) {
+        // 1. 블록 조회
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
+
+        // 권한 체크
+
+        Long planId = block.getPlan().getPlanId();
+        String lockKey = LOCK_PREFIX + planId;
+
+        if (!tryLock(lockKey)) {
+            throw new IllegalStateException("잠시 후 다시 시도해주세요.");
+        }
+
+        try {
+            // 삭제 (Soft Delete: 엔티티의 @SQLDelete 작동)
+            scheduleBlockRepository.delete(block);
+
+            // [STOMP] 삭제 알림 전송
+            // 삭제된 블록의 ID만 보내도 되지만, 프론트 처리를 위해 기존처럼 전체 정보를 보내줍니다.
+            // (프론트에서 "어떤 블록이 삭제됐는지" 확인 후 DOM에서 제거)
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+            sendStompMessage(planId, "BLOCK_DELETED", response);
+
+        } finally {
             unlock(lockKey);
         }
     }
