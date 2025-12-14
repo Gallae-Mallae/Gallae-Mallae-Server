@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import lombok.AccessLevel;
@@ -60,8 +61,13 @@ public class ScheduleBlock extends BaseEntity {
 
     // 블록 옮기기
     public void changePosition(Integer day, LocalTime startTime) {
+
+        Duration duration = Duration.between(this.startTime, this.endTime);
+
         this.day = day;
         this.startTime = startTime;
+
+        this.endTime = startTime.plus(duration);
     }
 
     // 블록 시간 조정하기

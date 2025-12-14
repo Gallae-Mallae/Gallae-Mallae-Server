@@ -8,7 +8,11 @@ import com.practice.OAuth2.domain.plan.entity.ScheduleBlock;
 import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.plan.repository.ScheduleBlockRepository;
 import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,36 +27,56 @@ public class ScheduleService {
     private final PlanRepository planRepository;
     private final AttractionRepository attractionRepository;
     private final ScheduleBlockRepository scheduleBlockRepository;
+
+    // 알림 전송용(web socket)
     private final SimpMessagingTemplate messagingTemplate;
+
+    // 동시성 제어용(redis lock)
+    private final StringRedisTemplate redisTemplate;
+
+    // Redis Lock 키 접두사
+    private static final String LOCK_PREFIX = "plan:lock:";
 
     // 블록 생성
     public void createScheduleBlock(Long planId, ScheduleCreateRequest request) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
 
-        // 장소 정보 조회 (null일 수 있음)
-        Attraction attraction = null;
-        if (request.getAttractionId() != null) {
-            attraction = attractionRepository.findById(request.getAttractionId())
-                    .orElse(null);
+        String lockKey = LOCK_PREFIX + planId;
+        if (!tryLock(lockKey)) {
+            throw new IllegalStateException("현재 다른 사용자가 편집 중입니다. 잠시 후 시도해주세요.");
         }
 
-        // 엔티티 생성 (기본 30분 설정)
-        ScheduleBlock block = ScheduleBlock.builder()
-                .plan(plan)
-                .attraction(attraction)
-                .day(request.getDay())
-                .startTime(request.getStartTime())
-                .endTime(request.getStartTime().plusMinutes(30)) // 기본 30분
-                .title(request.getTitle()) // 장소명이거나 사용자 입력 제목
-                .build();
+        try{
+            // 장소 정보 조회 (null일 수 있음)
+            Attraction attraction = null;
+            if (request.getAttractionId() != null) {
+                attraction = attractionRepository.findById(request.getAttractionId())
+                        .orElse(null);
+            }
 
-        scheduleBlockRepository.save(block);
+            // 엔티티 생성 (기본 30분 설정)
+            ScheduleBlock block = ScheduleBlock.builder()
+                    .plan(plan)
+                    .attraction(attraction)
+                    .day(request.getDay())
+                    .startTime(request.getStartTime())
+                    .endTime(request.getStartTime().plusMinutes(30)) // 기본 30분
+                    .title(request.getTitle()) // 장소명이거나 사용자 입력 제목
+                    .build();
 
-        // 엔티티 -> DTO 변환 후 전송
-        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
-        // [STOMP] 생성된 블록 정보를 방 전체에 전송 (Type: CREATE)
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/create", response);
+            scheduleBlockRepository.save(block);
+
+            // 엔티티 -> DTO 변환 후 전송
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+
+            // [STOMP] 실시간 알림 : 생성된 블록 정보를 방 전체에 전송 (Type: CREATE)
+            sendStompMessage(planId, "BLOCK_CREATED", response);
+
+        }finally{
+            // lock 해제
+            unlock(lockKey);
+        }
     }
 
     // 블록 크기 조절
@@ -60,14 +84,24 @@ public class ScheduleService {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
-        // 시간 업데이트 (엔티티 내부에 updateEndTime 메서드 필요)
-        block.updateEndTime(newEndTime);
-
         // [STOMP] 변경된 정보 전송 (Type: UPDATE)
         Long planId = block.getPlan().getPlanId();
 
-        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules/update", response);
+        String lockKey = LOCK_PREFIX + planId;
+        if (!tryLock(lockKey)) {
+            throw new IllegalStateException("잠시 후 다시 시도해주세요.");
+        }
+
+        try{
+            // 시간 업데이트 (엔티티 내부에 updateEndTime 메서드 필요)
+            block.updateEndTime(newEndTime);
+
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+
+            sendStompMessage(planId, "BLOCK_RESIZED", response);
+        }finally{
+            unlock(lockKey);
+        }
     }
 
     // 블록 이동
@@ -76,20 +110,59 @@ public class ScheduleService {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
-        // 이 방 멤버인지 확인 필요?
-
-        // 2. 블록 옮겼을때 바뀐 정보 업데이트
-        block.changePosition(newDay, newStartTime);
-
-        // 3. [STOMP] 실시간 동기화
-        // "10번 방의 스케줄이 변경되었으니, 새로고침"
         Long planId = block.getPlan().getPlanId();
 
-        ScheduleBlockResponse response = new ScheduleBlockResponse(block);
-        // 변경된 블록 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
-        // "UPDATE"라는 신호와 함께 변경된 블록 정보를 보냄
-        messagingTemplate.convertAndSend("/topic/plans/" + planId + "/schedules", response);
+        // [Redis Lock] 획득
+        String lockKey = LOCK_PREFIX + planId;
+        if (!tryLock(lockKey)) {
+            throw new IllegalStateException("동시 편집 충돌! 잠시 후 다시 시도하세요.");
+        }
+
+        // 이 방 멤버인지 확인 필요?
+
+        try{
+            // 블록 옮겼을때 바뀐 정보 업데이트
+            block.changePosition(newDay, newStartTime);
+
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+            // 변경된 블록 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
+            // "UPDATE"라는 신호와 함께 변경된 블록 정보를 보냄
+            sendStompMessage(planId, "BLOCK_MOVED", response);
+        }finally{
+            unlock(lockKey);
+        }
     }
 
+    /**
+     * STOMP 메시지 전송 공통 메서드
+     * 구독 주소: /topic/plans/{planId}
+     * 메시지 구조:
+     * { "event": "이벤트명",
+     * "data": { ... }
+     * }
+     */
+    private void sendStompMessage(Long planId, String eventType, Object data) {
+        Map<String, Object> message = new HashMap<>();
+        message.put("event", eventType);
+        message.put("data", data);
 
+        messagingTemplate.convertAndSend("/topic/plans/" + planId, message);
+    }
+
+    /**
+     * Redis 분산 락 획득 (Simple Implementation)
+     * - Key: plan:lock:{planId}
+     * - TTL: 3초 (데드락 방지용)
+     */
+    private boolean tryLock(String key) {
+        // setIfAbsent = Redis SETNX 명령어 (값이 없을 때만 set 성공)
+        return Boolean.TRUE.equals(
+                redisTemplate.opsForValue().setIfAbsent(key, "locked", 3, TimeUnit.SECONDS)
+        );
+    }
+
+    // redis lock 제거
+    private void unlock(String key) {
+        redisTemplate.delete(key);
+    }
 }
