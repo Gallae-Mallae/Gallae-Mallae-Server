@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +35,7 @@ public class ScheduleController {
         return ResponseEntity.ok().build();
     }
 
-    // 스케줄 시간 늘리기
+    // 스케줄 블록 시간 늘리기
     @PatchMapping("/{blockId}/resize")
     public ResponseEntity<Void> resizeBlock(
             @PathVariable Long blockId
@@ -43,7 +44,7 @@ public class ScheduleController {
         return ResponseEntity.ok().build();
     }
 
-    // 스케줄 이동
+    // 스케줄 블록 이동
     @PatchMapping("/{blockId}/position")
     public ResponseEntity<Void> moveScheduleBlock(
             @PathVariable Long blockId,
@@ -64,6 +65,22 @@ public class ScheduleController {
                 request.getNewStartTime()
         );
 
+        return ResponseEntity.ok().build();
+    }
+
+    // 스케줄 블록 삭제
+    @DeleteMapping("/{blockId}")
+    public ResponseEntity<Void> deleteBlock(
+            @PathVariable Long blockId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String email = userDetails.getUsername();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
+        Long userId = user.getUserId();
+
+        scheduleService.deleteScheduleBlock(userId, blockId);
         return ResponseEntity.ok().build();
     }
 }
