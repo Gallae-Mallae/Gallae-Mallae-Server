@@ -80,7 +80,7 @@ public class ScheduleService {
     }
 
     // 블록 크기 조절
-    public void resizeScheduleBlock(Long blockId, LocalTime newEndTime) {
+    public void resizeScheduleBlock(Long blockId) {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
@@ -93,6 +93,9 @@ public class ScheduleService {
         }
 
         try{
+            LocalTime currentEndTime = block.getEndTime();
+            LocalTime newEndTime = currentEndTime.plusMinutes(30);
+
             // 시간 업데이트 (엔티티 내부에 updateEndTime 메서드 필요)
             block.updateEndTime(newEndTime);
 
