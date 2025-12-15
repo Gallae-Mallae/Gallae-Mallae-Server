@@ -118,6 +118,21 @@ public class PlaceFolderService {
     }
 
     @Transactional
+    public void deleteFolder(UserPrincipal userPrincipal, Long placeFolderId) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+
+        PlaceFolder placeFolder = placeFolderRepository.findById(placeFolderId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlaceFolder", "id", placeFolderId));
+
+        if (!placeFolder.getUser().getUserId().equals(user.getUserId())) {
+            throw new BadRequestException("폴더를 생성한 사용자가 아닙니다.");
+        }
+
+        placeFolderRepository.delete(placeFolder); // cascade 로 중간테이블에 전파
+    }
+
+    @Transactional
     public void deleteAttractionInFolder(UserPrincipal userPrincipal, Long placeFolderId, Integer attractionId) {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
