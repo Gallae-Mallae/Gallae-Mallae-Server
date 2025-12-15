@@ -4,16 +4,65 @@
 
 <mapper namespace="com.practice.OAuth2.domain.attraction.mapper.AttractionMapper">
 
-    <select id="findAllAttractions" resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse">
+    <sql id="searchConditions">
+        <where>
+            latitude BETWEEN #{southWestLat} AND #{northEastLat}
+            AND longitude BETWEEN #{southWestLng} AND #{northEastLng}
+
+            <if test="sido != null"> AND area_code = #{sido} </if>
+            <if test="guguns != null"> AND si_gun_gu_code = #{guguns} </if>
+            <if test="contenttype != null"> AND content_type_id = #{contenttype} </if>
+            <if test="keyword != null and keyword != ''">
+                AND MATCH(title) AGAINST(#{keyword} IN BOOLEAN MODE)
+            </if>
+        </where>
+    </sql>
+
+    <select id="countAttractions"
+            parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
+            resultType="int">
+        SELECT COUNT(*) FROM attractions
+        <include refid="searchConditions" />
+    </select>
+
+    <select id="findClusteredAttractions"
+            parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
+            resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT
+        0                                AS attractionId,
+        COUNT(*)                         AS count,
+        AVG(latitude)                    AS latitude,
+        AVG(longitude)                   AS longitude,
+        MAX(title)                       AS title,
+        NULL                             AS address,
+        NULL                             AS imageUrl
+        FROM attractions
+        <include refid="searchConditions" />
+        GROUP BY LEFT(geohash, #{precision})
+    </select>
+
+    <select id="findRawAttractions"
+            parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
+            resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
         SELECT
         attr_id      AS attractionId,
-        title,
+        1            AS count,
+        latitude     AS latitude,
+        longitude    AS longitude,
+        title        AS title,
         addr1        AS address,
-        first_image1 AS imageUrl,
-        latitude,
-        longitude
+        first_image1 AS imageUrl
         FROM attractions
-        LIMIT 10
+        <include refid="searchConditions" />
+        LIMIT 100
+    </select>
+
+
+
+
+    <select id="findAllAttractions" resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT attr_id AS attractionId, title, addr1 AS address, first_image1 AS imageUrl, latitude, longitude, 1 as count
+        FROM attractions LIMIT 10
     </select>
 
 </mapper>
