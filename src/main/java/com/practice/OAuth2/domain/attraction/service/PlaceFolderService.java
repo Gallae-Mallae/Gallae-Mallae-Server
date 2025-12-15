@@ -12,12 +12,15 @@ import com.practice.OAuth2.domain.attraction.repository.PlaceFolderRepository;
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.domain.user.repository.UserRepository;
 import com.practice.OAuth2.global.exception.BadRequestException;
+import com.practice.OAuth2.global.exception.DuplicateResourceException;
 import com.practice.OAuth2.global.exception.ResourceNotFoundException;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.DestroyFailedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,33 @@ public class PlaceFolderService {
         PlaceFolder placeFolder = request.toEntity(user);
 
         placeFolderRepository.save(placeFolder);
+    }
+
+    @Transactional
+    public void addAttractionInFolder(UserPrincipal userPrincipal, Long placeFolderId, Integer attractionId) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+
+        PlaceFolder placeFolder = placeFolderRepository.findById(placeFolderId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlaceFolder", "id", placeFolderId));
+
+        if (!placeFolder.getUser().getUserId().equals(user.getUserId())) {
+            throw new BadRequestException("폴더를 생성한 사용자가 아닙니다.");
+        }
+
+        Attraction attraction = attractionRepository.findById(attractionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attraction", "id", attractionId));
+
+        ConnFolderPlace connFolderPlace = ConnFolderPlace.builder()
+                .attraction(attraction)
+                .placeFolder(placeFolder)
+                .build();
+
+        try {
+            connFolderPlaceRepository.save(connFolderPlace);
+        } catch (DataIntegrityViolationException e) {  // DB 제약조건 위반 시 발생하는 예외를 잡음
+            throw new DuplicateResourceException("이미 폴더에 추가된 여행지입니다.");
+        }
     }
 
     @Transactional(readOnly = true)

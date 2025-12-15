@@ -29,6 +29,15 @@ public class PlaceFolderController {
         return ResponseEntity.status(HttpStatus.CREATED).body("폴더 생성 완료");
     }
 
+    @PostMapping("/{place_foldersId}/attractions/{attractionsId}")
+    public ResponseEntity<String> addAttractionInFolder(@CurrentUser UserPrincipal userPrincipal,
+                                                        @PathVariable("place_foldersId") Long pId,
+                                                        @PathVariable("attractionsId") Integer aId) {
+        placeFolderService.addAttractionInFolder(userPrincipal, pId, aId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("여행지 추가 완료");
+    }
+
     @GetMapping
     public ResponseEntity<List<PlaceFolderResponse>> getFolderList(@CurrentUser UserPrincipal userPrincipal) {
 
@@ -44,4 +53,6 @@ public class PlaceFolderController {
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+
 }
