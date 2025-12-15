@@ -54,5 +54,14 @@ public class PlaceFolderController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @DeleteMapping("/{place_foldersId}/attractions/{attractionsId}")
+    public ResponseEntity<String> deleteAttractionInFolder(@CurrentUser UserPrincipal userPrincipal,
+                                                           @PathVariable("place_foldersId") Long placeFolderId,
+                                                           @PathVariable("attractionsId") Integer attractionId) {
+
+        placeFolderService.deleteAttractionInFolder(userPrincipal, placeFolderId, attractionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body("여행지 삭제 완료");
+    }
 
 }

@@ -101,4 +101,25 @@ public class PlaceFolderService {
                 .map(PlaceFolderInfoResponse::from)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void deleteAttractionInFolder(UserPrincipal userPrincipal, Long placeFolderId, Integer attractionId) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+
+        PlaceFolder placeFolder = placeFolderRepository.findById(placeFolderId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlaceFolder", "id", placeFolderId));
+
+        if (!placeFolder.getUser().getUserId().equals(user.getUserId())) {
+            throw new BadRequestException("폴더를 생성한 사용자가 아닙니다.");
+        }
+
+        Attraction attraction = attractionRepository.findById(attractionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attraction", "id", attractionId));
+
+        ConnFolderPlace connFolderPlace = connFolderPlaceRepository.findByPlaceFolderAndAttraction(placeFolder, attraction)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 폴더에 존재하지 않는 여행지입니다.", "attractionId", attractionId));
+
+        connFolderPlaceRepository.delete(connFolderPlace);
+    }
 }
