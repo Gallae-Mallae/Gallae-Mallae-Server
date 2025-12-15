@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -38,7 +40,9 @@ public class ConnFolderPlace extends BaseEntity {
     @JoinColumn(name = "attr_id", nullable = false)
     private Attraction attraction;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    @Builder
+    public ConnFolderPlace(PlaceFolder placeFolder, Attraction attraction) {
+        this.placeFolder = placeFolder;
+        this.attraction = attraction;
+    }
 }

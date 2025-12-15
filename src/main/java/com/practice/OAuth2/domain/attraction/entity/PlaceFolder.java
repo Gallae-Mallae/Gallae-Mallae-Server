@@ -2,17 +2,13 @@ package com.practice.OAuth2.domain.attraction.entity;
 
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.global.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -33,4 +29,19 @@ public class PlaceFolder extends BaseEntity{
 
     @Column(length = 20)
     private String color;
+
+    @OneToMany(mappedBy = "placeFolder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConnFolderPlace> connFolderPlaces = new ArrayList<>();
+
+    @Builder
+    public PlaceFolder(User user, String name, String color) {
+        this.user = user;
+        this.name = name;
+        this.color = color;
+    }
+
+    public void updateNameAndColor(String name, String color) {
+        this.name = name;
+        this.color = color;
+    }
 }

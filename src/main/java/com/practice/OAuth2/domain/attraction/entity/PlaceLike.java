@@ -39,7 +39,4 @@ public class PlaceLike extends BaseEntity {
     @JoinColumn(name = "attr_id", nullable = false)
     private Attraction attraction;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 }
