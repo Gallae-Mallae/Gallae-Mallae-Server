@@ -54,6 +54,16 @@ public class PlaceFolderController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PatchMapping("/{place_foldersId}")
+    public ResponseEntity<String> updateFolderName(@CurrentUser UserPrincipal userPrincipal,
+                                                   @PathVariable("place_foldersId") Long placeFolderId,
+                                                   @RequestBody PlaceFolderCreateRequest request) {
+
+        placeFolderService.updateFolderName(userPrincipal, placeFolderId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body("폴더명 변경 완료");
+    }
+
     @DeleteMapping("/{place_foldersId}/attractions/{attractionsId}")
     public ResponseEntity<String> deleteAttractionInFolder(@CurrentUser UserPrincipal userPrincipal,
                                                            @PathVariable("place_foldersId") Long placeFolderId,
