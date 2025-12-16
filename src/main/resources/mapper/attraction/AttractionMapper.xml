@@ -29,13 +29,20 @@
             parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
             resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
         SELECT
-        0                                AS attractionId,
+        -- count가 1이면 attr_id를, 2 이상이면 0 (클러스터 ID) 반환
+        CASE WHEN COUNT(*) = 1 THEN MAX(attr_id) ELSE 0 END AS attractionId,
+
         COUNT(*)                         AS count,
         AVG(latitude)                    AS latitude,
         AVG(longitude)                   AS longitude,
         MAX(title)                       AS title,
-        NULL                             AS address,
-        NULL                             AS imageUrl
+
+        -- -----------------------------------------------------------------------------------
+        -- 💡 [핵심 수정] count가 1일 때만 상세 정보를 채우고, 2 이상일 때는 NULL을 반환합니다.
+        -- -----------------------------------------------------------------------------------
+        CASE WHEN COUNT(*) = 1 THEN MAX(addr1) ELSE NULL END AS address,
+        CASE WHEN COUNT(*) = 1 THEN MAX(first_image1) ELSE NULL END AS imageUrl
+
         FROM attractions
         <include refid="searchConditions" />
         GROUP BY LEFT(geohash, #{precision})
@@ -54,7 +61,7 @@
         first_image1 AS imageUrl
         FROM attractions
         <include refid="searchConditions" />
-        LIMIT 100
+        LIMIT 250
     </select>
 
 

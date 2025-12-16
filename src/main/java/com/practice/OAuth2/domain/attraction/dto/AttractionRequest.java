@@ -17,7 +17,7 @@ public class AttractionRequest {
     private Double northEastLng;
 
     // 2. 선택 파라미터 (필터링)
-    private Integer sido;           // 시/도 코드
+    private Integer sido;            // 시/도 코드
     private Integer guguns;         // 구/군 코드
     private Integer contenttype;    // 관광지 타입
     private String keyword;         // 검색어
@@ -29,10 +29,14 @@ public class AttractionRequest {
 
         // 숫자가 클수록 넓은 화면(13) -> 5자리 (동네)
         // 숫자가 작을수록 좁은 화면(1) -> 6자리 (블록)
-        if (this.zoomLevel >= 8) {
+        if (this.zoomLevel >= 11){
             return 3;
-        } else {
+        }else if(this.zoomLevel >= 8){
+            return 4;
+        }else if(this.zoomLevel >= 6){
             return 6;
+        }else{
+            return 7;
         }
     }
 }
