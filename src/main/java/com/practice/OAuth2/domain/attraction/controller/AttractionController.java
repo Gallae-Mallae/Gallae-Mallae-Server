@@ -1,14 +1,13 @@
 package com.practice.OAuth2.domain.attraction.controller;
 
+import com.practice.OAuth2.domain.attraction.dto.AttractionRequest;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
+import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
 import com.practice.OAuth2.domain.attraction.service.AttractionService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,16 +22,25 @@ public class AttractionController {
         return ResponseEntity.ok(results);
     }
 
-
+    @GetMapping("/map") //
+    public ResponseEntity<List<AttractionResponse2>> getMapMarkers(
+            @ModelAttribute AttractionRequest request
+    ) {
+        List<AttractionResponse2> result = attractionService.getMapMarkers(request);
+        return ResponseEntity.ok(result);
+    }
 
 
     // MyBatis 연결 테스트용
-    // 접속 주소: http://localhost:8080/api/attractions/mybatis-test
-    @GetMapping("/mybatis-test")
+    // 접속 주소: http://localhost:8080/api/attractions/map/mybatis-test
+    @GetMapping("/map/mybatis-test")
     public ResponseEntity<List<AttractionResponse>> testMyBatis() {
         List<AttractionResponse> results = attractionService.getAttractionListTest();
         return ResponseEntity.ok(results);
     }
+
+
+
 
 
 }
