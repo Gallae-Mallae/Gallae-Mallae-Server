@@ -9,26 +9,32 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AttractionRequest {
 
-    // 1. 필수 파라미터 (화면 좌표 & 줌 레벨)
+    // (화면 좌표 & 줌 레벨)
     private Integer zoomLevel;      // 1~13
     private Double southWestLat;
     private Double southWestLng;
     private Double northEastLat;
     private Double northEastLng;
 
-    // 2. 선택 파라미터 (필터링)
+
     private Integer sido;            // 시/도 코드
     private Integer guguns;         // 구/군 코드
     private Integer contenttype;    // 관광지 타입
     private String keyword;         // 검색어
 
-    // 3. [중요] MyBatis가 호출할 로직 (줌 레벨 -> Geohash 자릿수 변환)
-    // XML에서 #{precision}을 쓰면 이 메서드가 실행됩니다.
+
+    // [추가] 페이지네이션 필드
+    private Integer page = 0;  // 기본값 0페이지
+    private Integer size = 20; // 기본값 20개
+
+
+
+
+    // XML에서 #{precision}을 쓰면 이 메서드가 실행
     public Integer getPrecision() {
         if (this.zoomLevel == null) return 5; // 기본값 방어
 
-        // 숫자가 클수록 넓은 화면(13) -> 5자리 (동네)
-        // 숫자가 작을수록 좁은 화면(1) -> 6자리 (블록)
+
         if (this.zoomLevel >= 11){
             return 3;
         }else if(this.zoomLevel >= 8){
@@ -38,5 +44,19 @@ public class AttractionRequest {
         }else{
             return 7;
         }
+    }
+
+
+
+    // [추가] 페이지네이션
+    public int getOffset() {
+        if (page == null || page < 0) page = 0;
+        if (size == null || size <= 0) size = 20;
+        return page * size;
+    }
+
+    public int getLimit() {
+        if (size == null) size = 20;
+        return size + 1;
     }
 }

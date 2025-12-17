@@ -31,6 +31,17 @@ public class AttractionController {
     }
 
 
+    @GetMapping("/map/sidebar")
+    public ResponseEntity<com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse> getSidebarList(
+            @ModelAttribute AttractionRequest request
+    ) {
+        // 페이지네이션 로직 호출
+        var result = attractionService.getSidebarList(request);
+        return ResponseEntity.ok(result);
+    }
+
+
+
     // MyBatis 연결 테스트용
     // 접속 주소: http://localhost:8080/api/attractions/map/mybatis-test
     @GetMapping("/map/mybatis-test")
