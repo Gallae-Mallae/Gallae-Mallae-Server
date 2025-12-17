@@ -49,29 +49,50 @@ public class AttractionService {
             return attractionMapper.findClusteredAttractions(request);
         }
     }
-
+    //검색 조건 유효성 검사 메서드
     private boolean hasAtLeastOneCondition(AttractionRequest req) {
-
-        // 1. int 타입들 (sido, guguns, contenttype) -> Integer로 가정하고 null 체크
-        // 만약 DTO가 원시타입 int라면 "req.getSido() != 0" 으로 고쳐야 합니다.
         boolean hasSido = req.getSido() != null;
         boolean hasGuguns = req.getGuguns() != null;
         boolean hasContentType = req.getContenttype() != null;
 
-        // 2. String 타입 (keyword) -> null 아니고, 빈 문자열("") 아니고, 공백(" ")도 아닌지 체크
         boolean hasKeyword = req.getKeyword() != null && !req.getKeyword().trim().isEmpty();
 
-        // 3. 넷 중 하나라도 true면 통과 (OR 연산)
         return hasSido || hasGuguns || hasContentType || hasKeyword;
     }
 
-    //  MyBatis 테스트용 메서드
-    public List<AttractionResponse> getAttractionListTest() {
 
-        return attractionMapper.findAllAttractions();
+
+    //사이드바 리스트
+    @Transactional(readOnly = true)
+    public com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse getSidebarList(AttractionRequest request) {
+
+        // 1. 유효성 검사 (검색 조건 없으면 빈 리스트 반환)
+        if (!hasAtLeastOneCondition(request)) {
+            // 조건이 없으면 빈 결과 반환
+            return new com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse(
+                    java.util.Collections.emptyList(), false, request.getPage());
+        }
+
+        // 2. DB 조회 (요청 사이즈보다 1개 더 가져오도록 XML에서 설정)
+        List<AttractionResponse2> result = attractionMapper.findSidebarList(request);
+
+        // 3. hasNext 판단 로직
+        boolean hasNext = false;
+        if (result.size() > request.getSize()) {
+            hasNext = true;
+            result.remove(result.size() - 1); // 확인용으로 가져온 마지막 1개 제거
+        }
+
+        // 4. 결과 반환
+        return new com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse(
+                result, hasNext, request.getPage());
     }
 
 
 
+    //  MyBatis 테스트용 메서드
+    public List<AttractionResponse> getAttractionListTest() {
+        return attractionMapper.findAllAttractions();
+    }
 
 }

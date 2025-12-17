@@ -21,4 +21,9 @@ public interface AttractionMapper {
 
     // 테스트용
     List<AttractionResponse> findAllAttractions();
+
+    //페이지네이션
+    List<AttractionResponse2> findSidebarList(AttractionRequest request);
 }
+
+

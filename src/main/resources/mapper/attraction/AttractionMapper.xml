@@ -38,7 +38,7 @@
         MAX(title)                       AS title,
 
         -- -----------------------------------------------------------------------------------
-        -- 💡 [핵심 수정] count가 1일 때만 상세 정보를 채우고, 2 이상일 때는 NULL을 반환합니다.
+        -- count가 1일 때만 상세 정보를 채우고, 2 이상일 때는 NULL을 반환
         -- -----------------------------------------------------------------------------------
         CASE WHEN COUNT(*) = 1 THEN MAX(addr1) ELSE NULL END AS address,
         CASE WHEN COUNT(*) = 1 THEN MAX(first_image1) ELSE NULL END AS imageUrl
@@ -72,4 +72,25 @@
         FROM attractions LIMIT 10
     </select>
 
+
+
+    <select id="findSidebarList"
+            parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
+            resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT
+        attr_id      AS attractionId,
+        1            AS count,
+        latitude     AS latitude,
+        longitude    AS longitude,
+        title        AS title,
+        addr1        AS address,
+        first_image1 AS imageUrl
+        FROM attractions
+        <include refid="searchConditions" />
+
+        ORDER BY like_count DESC, view_count DESC, attr_id DESC
+
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
 </mapper>
