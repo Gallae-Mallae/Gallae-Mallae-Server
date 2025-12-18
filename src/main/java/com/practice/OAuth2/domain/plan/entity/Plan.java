@@ -61,4 +61,10 @@ public class Plan extends BaseEntity {
         // 생성 시 초대코드 자동 발급
         this.inviteCode = UUID.randomUUID().toString();
     }
+
+    public void update(String title, LocalDate startDate, LocalDate endDate) {
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
 }
