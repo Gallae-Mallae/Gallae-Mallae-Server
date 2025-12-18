@@ -4,12 +4,15 @@ import com.practice.OAuth2.domain.plan.dto.PlanCreateRequest;
 import com.practice.OAuth2.domain.plan.dto.PlanJoinRequest;
 import com.practice.OAuth2.domain.plan.dto.PlanMemberResponse;
 import com.practice.OAuth2.domain.plan.dto.PlanResponse;
+import com.practice.OAuth2.domain.plan.dto.PlanUpdateRequest;
 import com.practice.OAuth2.domain.plan.entity.Plan;
 import com.practice.OAuth2.domain.plan.entity.PlanMember;
 import com.practice.OAuth2.domain.plan.repository.PlanMemberRepository;
 import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.domain.user.repository.UserRepository;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -86,7 +89,26 @@ public class PlanService {
         return plan.getPlanId();
     }
 
-    // 여행 수정
+    // 여행 수정 (제목, 기간)
+    @Transactional
+    public void updatePlan(Long planId, PlanUpdateRequest request) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
 
-    // 여행 삭제
+        // 권한 체크
+
+        // 데이터 수정
+        plan.update(request.getTitle(), request.getStartDate(), request.getEndDate());
+
+        // [STOMP] PLAN_UPDATED 알림 전송
+        // 변경된 Plan 정보를 모두에게 발행
+        sendStompMessage(planId, "PLAN_UPDATED", new PlanResponse(plan));
+    }
+
+    private void sendStompMessage(Long planId, String eventType, Object data) {
+        Map<String, Object> message = new HashMap<>();
+        message.put("event", eventType);
+        message.put("data", data);
+        messagingTemplate.convertAndSend("/topic/plans/" + planId, message);
+    }
 }

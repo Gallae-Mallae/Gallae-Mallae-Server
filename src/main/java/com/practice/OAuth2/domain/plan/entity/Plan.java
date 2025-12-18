@@ -53,7 +53,7 @@ public class Plan extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder
-    public Plan(String title, LocalDate startDate, LocalDate endDate, String region, String planImageUrl) {
+    public Plan(String title, LocalDate startDate, LocalDate endDate, String planImageUrl) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
