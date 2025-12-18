@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MemoRepository extends JpaRepository<Memo, Long> {
     // 스케줄 블럭에 달린 메모 조회
+    // findByScheduleBlock_BlockId 고민
     List<Memo> findAllByScheduleBlock_BlockId(Long blockId);
 }

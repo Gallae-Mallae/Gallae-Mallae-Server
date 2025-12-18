@@ -53,12 +53,18 @@ public class Plan extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder
-    public Plan(String title, LocalDate startDate, LocalDate endDate, String region, String planImageUrl) {
+    public Plan(String title, LocalDate startDate, LocalDate endDate, String planImageUrl) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
         this.planImageUrl = planImageUrl;
         // 생성 시 초대코드 자동 발급
         this.inviteCode = UUID.randomUUID().toString();
+    }
+
+    public void update(String title, LocalDate startDate, LocalDate endDate) {
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 }
