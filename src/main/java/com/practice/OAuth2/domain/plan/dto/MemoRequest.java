@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class MemoRequest {
+    private Long blockId;
     private String content;
     private String linkUrl;
     private String type;
