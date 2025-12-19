@@ -37,9 +37,6 @@ public class ScrapFolder extends BaseEntity {
     @Column(length = 100)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
     @Column(name = "folder_image_url", length = 1000)
     private String folderImageUrl;
 
@@ -48,10 +45,9 @@ public class ScrapFolder extends BaseEntity {
 
     // 생성자 추가
     @Builder
-    public ScrapFolder(User user, String name, String description, String folderImageUrl){
+    public ScrapFolder(User user, String name, String folderImageUrl){
         this.user = user;
         this.name = name;
-        this.description = description;
         this.folderImageUrl = folderImageUrl;
     }
 

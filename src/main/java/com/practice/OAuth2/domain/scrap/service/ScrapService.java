@@ -32,7 +32,6 @@ public class ScrapService {
         ScrapFolder folder = ScrapFolder.builder()
                 .user(user)
                 .name(req.getName())
-                .description(req.getDescription())
                 .folderImageUrl(req.getFolderImageUrl())
                 .build();
 

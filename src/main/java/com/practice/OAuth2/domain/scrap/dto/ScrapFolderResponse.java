@@ -11,14 +11,12 @@ import lombok.Getter;
 public class ScrapFolderResponse {
     private Long folderId;
     private String name;
-    private String description;
     private String folderImageUrl;
     
     public static ScrapFolderResponse from(ScrapFolder folder) {
         return ScrapFolderResponse.builder()
                 .folderId(folder.getFolderId())
                 .name(folder.getName())
-                .description(folder.getDescription())
                 .folderImageUrl(folder.getFolderImageUrl())
                 .build();
     }
