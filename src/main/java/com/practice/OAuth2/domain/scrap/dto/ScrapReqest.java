@@ -10,7 +10,6 @@ public class ScrapReqest {
     @NoArgsConstructor
     public static class CreateScrapFolder{
         private String name;
-        private String description;
         private String folderImageUrl;
     }
 
@@ -20,6 +19,7 @@ public class ScrapReqest {
     public static class CreateScrap {
         private String title;
         private String content;
+        private String description;
         private String originalLink;
         private String imageUrl;
     }
@@ -30,6 +30,7 @@ public class ScrapReqest {
     public static class UpdateScrap {
         private String title;
         private String content;
+        private String description;
         private String originalLink;
         private String imageUrl;
     }
@@ -39,7 +40,6 @@ public class ScrapReqest {
     @NoArgsConstructor
     public static class UpdateScrapFolder {
         private String name;
-        private String description;
         private String folderImageUrl;
     }
 }

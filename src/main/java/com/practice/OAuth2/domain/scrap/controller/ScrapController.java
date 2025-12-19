@@ -1,28 +1,23 @@
 package com.practice.OAuth2.domain.scrap.controller;
 
+import com.practice.OAuth2.domain.scrap.dto.LinkMetadataResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapFolderResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrapFolder;
 import com.practice.OAuth2.domain.scrap.dto.ScrapResponse;
 import com.practice.OAuth2.domain.scrap.service.ScrapService;
+import com.practice.OAuth2.domain.scrap.service.UrlMetadataService;
 import com.practice.OAuth2.global.security.UserPrincipal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/scrap-folders")
+@RequestMapping("/api/scrap-folders")
 public class ScrapController {
 
     private final ScrapService scrapService;
@@ -30,7 +25,7 @@ public class ScrapController {
     // Http Response 받으려고 ResponseEntity사용함
 
     // 폴더 생성
-    // 주소: POST /api/scrap-folders 임시
+    // 주소: POST /api/scrap-folders
     @PostMapping()
     public ResponseEntity<Long> createScrapFolder(@AuthenticationPrincipal UserPrincipal principal, @RequestBody ScrapReqest.CreateScrapFolder req){
 
@@ -38,7 +33,7 @@ public class ScrapController {
     }
 
     // 스크랩 생성 (폴더 안)
-    // 주소: POST /api/scrap-folders/{folderId}/scraps 임시
+    // 주소: POST /api/scrap-folders/{folderId}/scraps
     @PostMapping("/{folderId}/scraps")
     public ResponseEntity<Long> createScrap(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -56,7 +51,7 @@ public class ScrapController {
     }
 
     // 스크랩 조회
-    // 주소: GET /api/scrap-folders/{folderId}/scraps 임시
+    // 주소: GET /api/scrap-folders/{folderId}/scraps
     @GetMapping("/{folderId}/scraps")
     public ResponseEntity<List<ScrapResponse>> getScraps(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -65,7 +60,7 @@ public class ScrapController {
     }
 
     // 폴더 수정
-    // 주소: PATCH /api/scrap-folders/{folderId} 임시
+    // 주소: PATCH /api/scrap-folders/{folderId}
     @PatchMapping("/{folderId}")
     public ResponseEntity<String> updateScrapFolder(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -78,7 +73,7 @@ public class ScrapController {
     }
 
     // 폴더 삭제
-    // 주소: DELETE /api/scrap-folders/{folderId} 임시
+    // 주소: DELETE /api/scrap-folders/{folderId}
     @DeleteMapping("/{folderId}")
     public ResponseEntity<String> deleteScrapFolder(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -89,7 +84,7 @@ public class ScrapController {
     }
 
     // 스크랩 수정
-    // 주소: PATCH /api/scrap-folders/{folderId}/scraps/{scrapId} 임시
+    // 주소: PATCH /api/scrap-folders/{folderId}/scraps/{scrapId}
     @PatchMapping("/{folderId}/scraps/{scrapId}")
     public ResponseEntity<String> updateScrap(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -102,7 +97,7 @@ public class ScrapController {
     }
 
     // 스크랩 삭제
-    // 주소: DELETE /api/scrap-folders/{folderId}/scraps/{scrapId} 임시
+    // 주소: DELETE /api/scrap-folders/{folderId}/scraps/{scrapId}
     @DeleteMapping("/{folderId}/scraps/{scrapId}")
     public ResponseEntity<String> deleteScrap(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -111,5 +106,15 @@ public class ScrapController {
 
         scrapService.deleteScrap(principal.getId(), scrapId);
         return ResponseEntity.ok("스크랩이 삭제되었습니다.");
+    }
+
+    // 미리보기
+    // 주소: GET /api/scrap-folders/preview
+    private final UrlMetadataService urlMetadataService;
+
+    @GetMapping("/preview")
+    public ResponseEntity<LinkMetadataResponse> getLinkPreview(@RequestParam String url) {
+        LinkMetadataResponse response = urlMetadataService.extractMetadata(url);
+        return ResponseEntity.ok(response);
     }
 }
