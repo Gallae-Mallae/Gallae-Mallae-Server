@@ -25,7 +25,6 @@ public class ScrapService {
     private final UserRepository userRepository;
 
     // 스크랩 폴더 생성
-    @Transactional
     public Long createScrapFolder(Long userId, ScrapReqest.CreateScrapFolder req){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 x"));
@@ -43,25 +42,36 @@ public class ScrapService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 x"));
 
-        // 유저가 만든 폴더들 다 찾아오기
-        return scrapFolderRepository.findByUser(user).stream()
-                .map(ScrapFolderResponse::from)
-                .collect(Collectors.toList());
+        List<ScrapFolder> folders = scrapFolderRepository.findByUser(user);
+
+        // 각 폴더별로 최신 스크랩 이미지를 조회하여 DTO 생성
+        return folders.stream().map(folder -> {
+            // 해당 폴더의 가장 최신 스크랩 1개 조회
+            Scrap latestScrap = scrapRepository.findTopByScrapFolderOrderByCreatedAtDesc(folder)
+                    .orElse(null);
+
+            String thumbnailParams = null;
+            if (latestScrap != null) {
+                // 스크랩에 저장된 이미지 URL 가져오기
+                thumbnailParams = latestScrap.getImageUrl();
+            }
+
+            // DTO 생성자 호출 (폴더 정보 + 최신 이미지 URL)
+            return new ScrapFolderResponse(folder, thumbnailParams);
+        }).collect(Collectors.toList());
     }
 
     // 스크랩 폴더 수정
-    @Transactional
     public void updateScrapFolder(Long userId, Long folderId, ScrapReqest.UpdateScrapFolder req) {
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
 
         validateFolderOwnership(folder, userId);
 
-        folder.updateScrapFolder(req.getName(), req.getFolderImageUrl());
+        folder.updateScrapFolder(req.getName());
     }
 
     // 스크랩 폴더 삭제
-    @Transactional
     public void deleteScrapFolder(Long userId, Long folderId) {
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
@@ -74,7 +84,6 @@ public class ScrapService {
 
     //--------------------------------------------------------------------------------------------
     // 스크랩 생성
-    @Transactional
     public Long createScrap(Long userId, Long folderId, ScrapReqest.CreateScrap req){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
@@ -93,7 +102,6 @@ public class ScrapService {
     }
 
     // 스크랩 조회
-    @Transactional
     public List<ScrapResponse> getScraps(Long userId, Long folderId){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 없음"));
@@ -106,7 +114,6 @@ public class ScrapService {
     }
 
     // 스크랩 수정
-    @Transactional
     public void updateScrap(Long userId, Long scrapId, ScrapReqest.UpdateScrap req) {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
@@ -118,7 +125,6 @@ public class ScrapService {
     }
 
     // 스크랩 삭제
-    @Transactional
     public void deleteScrap(Long userId, Long scrapId) {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));

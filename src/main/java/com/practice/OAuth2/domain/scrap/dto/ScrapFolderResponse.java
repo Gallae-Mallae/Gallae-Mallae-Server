@@ -20,4 +20,18 @@ public class ScrapFolderResponse {
                 .folderImageUrl(folder.getFolderImageUrl())
                 .build();
     }
+
+    public ScrapFolderResponse(ScrapFolder folder, String latestImageUrl) {
+        this.folderId = folder.getFolderId(); // 엔티티 필드명 확인 (getId or getFolderId)
+        this.name = folder.getName();
+
+        // 이미지가 있으면 그 이미지를, 없으면 기본 이미지(placeholder)를 사용
+        if (latestImageUrl != null && !latestImageUrl.isEmpty()) {
+            this.folderImageUrl = latestImageUrl;
+        } else {
+            // [팁] 프론트엔드 프로젝트 안에 넣어둔 기본 이미지 경로 or S3의 기본 이미지 URL
+            // 임시
+            // this.folderImageUrl = "https://your-s3-bucket.com/static/default_folder_icon.png";
+        }
+    }
 }
