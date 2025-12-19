@@ -13,6 +13,7 @@ public class ScrapResponse {
     private Long scrapId;
     private String title;
     private String content;
+    private String description;
     private String originalLink;
     private String imageUrl;
 
@@ -22,6 +23,7 @@ public class ScrapResponse {
                 .scrapId(scrap.getScrapId())
                 .title(scrap.getTitle())
                 .content(scrap.getContent())
+                .description(scrap.getDescription())
                 .originalLink(scrap.getOriginalLink())
                 .imageUrl(scrap.getImageUrl())
                 .build();

@@ -35,6 +35,8 @@ public class Scrap extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    private String description;
+
     @Column(name = "original_link")
     private String originalLink;
 
@@ -43,18 +45,20 @@ public class Scrap extends BaseEntity {
 
     // 생성자 추가
     @Builder
-    public Scrap(ScrapFolder scrapFolder, String title, String content, String originalLink, String imageUrl){
+    public Scrap(ScrapFolder scrapFolder, String title, String content, String description, String originalLink, String imageUrl){
         this.scrapFolder = scrapFolder;
         this.title = title;
         this.content = content;
+        this.description = description;
         this.originalLink = originalLink;
         this.imageUrl = imageUrl;
     }
 
     // update Scrap
-    public void updateScrap(String title, String content, String originalLink, String imageUrl) {
+    public void updateScrap(String title, String content, String description, String originalLink, String imageUrl) {
         this.title = title;
         this.content = content;
+        this.description = description;
         this.originalLink = originalLink;
         this.imageUrl = imageUrl;
     }

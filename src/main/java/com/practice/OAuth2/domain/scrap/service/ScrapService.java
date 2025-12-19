@@ -57,7 +57,7 @@ public class ScrapService {
 
         validateFolderOwnership(folder, userId);
 
-        folder.updateScrapFolder(req.getName(), req.getDescription(), req.getFolderImageUrl());
+        folder.updateScrapFolder(req.getName(), req.getFolderImageUrl());
     }
 
     // 스크랩 폴더 삭제
@@ -85,6 +85,7 @@ public class ScrapService {
                 .scrapFolder(folder)
                 .title(req.getTitle())
                 .content(req.getContent())
+                .description(req.getDescription())
                 .originalLink(req.getOriginalLink())
                 .imageUrl(req.getImageUrl())
                 .build();
@@ -113,7 +114,7 @@ public class ScrapService {
         // 권한 확인
         validateScrapOwnership(scrap, userId);
 
-        scrap.updateScrap(req.getTitle(), req.getContent(), req.getOriginalLink(), req.getImageUrl());
+        scrap.updateScrap(req.getTitle(), req.getContent(), req.getDescription(), req.getOriginalLink(), req.getImageUrl());
     }
 
     // 스크랩 삭제
