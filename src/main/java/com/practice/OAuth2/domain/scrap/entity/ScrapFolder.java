@@ -54,7 +54,6 @@ public class ScrapFolder extends BaseEntity {
     // update ScrapFolder
     public void updateScrapFolder(String name, String description, String folderImageUrl) {
         this.name = name;
-        this.description = description;
         this.folderImageUrl = folderImageUrl;
     }
 }
