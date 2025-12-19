@@ -9,8 +9,8 @@
             latitude BETWEEN #{southWestLat} AND #{northEastLat}
             AND longitude BETWEEN #{southWestLng} AND #{northEastLng}
 
-            <if test="sido != null"> AND area_code = #{sido} </if>
-            <if test="guguns != null"> AND si_gun_gu_code = #{guguns} </if>
+            <if test="sido != null"> AND sido_code = #{sido} </if>
+            <if test="guguns != null"> AND gugun_code = #{guguns} </if>
             <if test="contenttype != null"> AND content_type_id = #{contenttype} </if>
             <if test="keyword != null and keyword != ''">
                 AND MATCH(title) AGAINST(#{keyword} IN BOOLEAN MODE)
