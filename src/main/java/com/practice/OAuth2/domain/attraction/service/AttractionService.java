@@ -3,14 +3,18 @@ package com.practice.OAuth2.domain.attraction.service;
 import com.practice.OAuth2.domain.attraction.dto.AttractionRequest;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
+import com.practice.OAuth2.domain.attraction.entity.Attraction;
 import com.practice.OAuth2.domain.attraction.mapper.AttractionMapper;
 import com.practice.OAuth2.domain.attraction.repository.AttractionRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 
 @Service
 @RequiredArgsConstructor
@@ -88,11 +92,21 @@ public class AttractionService {
                 result, hasNext, request.getPage());
     }
 
+    @Transactional(readOnly = true)
+    public AttractionResponse getAttractionDetail(Integer attractionId) {
+        Attraction attraction = attractionRepository.findById(attractionId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "해당 여행지를 찾을 수 없습니다. ID: " + attractionId
+                ));
+
+        return new AttractionResponse(attraction);
+    }
 
 
     //  MyBatis 테스트용 메서드
     public List<AttractionResponse> getAttractionListTest() {
         return attractionMapper.findAllAttractions();
     }
+
 
 }

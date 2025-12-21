@@ -10,23 +10,37 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AttractionResponse2 {
 
-    private Integer attractionId; // 클러스터면 0
-    private Integer count;        // 1이면 마커, 2이상이면 클러스터
+    private Integer attractionId;
+    private Integer count;
     private String title;
     private Double latitude;
     private Double longitude;
 
-    // 상세 정보 (마커일 때만 존재)
     private String address;
     private String imageUrl;
 
-    // Entity -> DTO 변환용 생성자 (낱개 마커용)
+    // viewCount, likeCount, contentTypeId는 용량이 작고 유용하니 유지 추천!
+    private Long viewCount;
+    private Long likeCount;
+    private Integer contentTypeId;
+
+
+
     public AttractionResponse2(Attraction attraction) {
         this.attractionId = attraction.getAttrId();
         this.title = attraction.getTitle();
         this.address = attraction.getAddr1();
         this.imageUrl = attraction.getFirstImage1();
-        this.count = 1; // 낱개는 무조건 1
+        this.count = 1;
+
+        this.viewCount = attraction.getViewCount();
+        this.likeCount = attraction.getLikeCount();
+
+
+
+        if (attraction.getContentType() != null) {
+            this.contentTypeId = attraction.getContentType().getContentTypeId();
+        }
 
         if (attraction.getLatitude() != null) {
             this.latitude = attraction.getLatitude().doubleValue();
