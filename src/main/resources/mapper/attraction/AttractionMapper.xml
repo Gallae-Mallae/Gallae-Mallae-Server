@@ -37,11 +37,12 @@
         AVG(longitude)                   AS longitude,
         MAX(title)                       AS title,
 
-        -- -----------------------------------------------------------------------------------
-        -- count가 1일 때만 상세 정보를 채우고, 2 이상일 때는 NULL을 반환
-        -- -----------------------------------------------------------------------------------
+        -- 낱개일 때만 상세 정보 반환, 뭉쳐있으면 NULL
         CASE WHEN COUNT(*) = 1 THEN MAX(addr1) ELSE NULL END AS address,
-        CASE WHEN COUNT(*) = 1 THEN MAX(first_image1) ELSE NULL END AS imageUrl
+        CASE WHEN COUNT(*) = 1 THEN MAX(first_image1) ELSE NULL END AS imageUrl,
+        CASE WHEN COUNT(*) = 1 THEN MAX(view_count) ELSE NULL END AS viewCount,
+        CASE WHEN COUNT(*) = 1 THEN MAX(like_count) ELSE NULL END AS likeCount,
+        CASE WHEN COUNT(*) = 1 THEN MAX(content_type_id) ELSE NULL END AS contentTypeId
 
         FROM attractions
         <include refid="searchConditions" />
@@ -52,27 +53,36 @@
             parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
             resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
         SELECT
-        attr_id      AS attractionId,
-        1            AS count,
-        latitude     AS latitude,
-        longitude    AS longitude,
-        title        AS title,
-        addr1        AS address,
-        first_image1 AS imageUrl
+        attr_id          AS attractionId,
+        1                AS count,
+        latitude         AS latitude,
+        longitude        AS longitude,
+        title            AS title,
+        addr1            AS address,
+        first_image1     AS imageUrl,
+        view_count       AS viewCount,
+        like_count       AS likeCount,
+        content_type_id  AS contentTypeId
         FROM attractions
         <include refid="searchConditions" />
         LIMIT 250
     </select>
 
-
-
-
     <select id="findAllAttractions" resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
-        SELECT attr_id AS attractionId, title, addr1 AS address, first_image1 AS imageUrl, latitude, longitude, 1 as count
-        FROM attractions LIMIT 10
+        SELECT
+        attr_id AS attractionId,
+        title,
+        addr1 AS address,
+        first_image1 AS imageUrl,
+        latitude,
+        longitude,
+        1 as count,
+        view_count AS viewCount,
+        like_count AS likeCount,
+        content_type_id AS contentTypeId
+        FROM attractions
+        LIMIT 10
     </select>
-
-
 
     <select id="findSidebarList"
             parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
@@ -84,7 +94,10 @@
         longitude    AS longitude,
         title        AS title,
         addr1        AS address,
-        first_image1 AS imageUrl
+        first_image1 AS imageUrl,
+        view_count   AS viewCount,
+        like_count   AS likeCount,
+        content_type_id AS contentTypeId
         FROM attractions
         <include refid="searchConditions" />
 

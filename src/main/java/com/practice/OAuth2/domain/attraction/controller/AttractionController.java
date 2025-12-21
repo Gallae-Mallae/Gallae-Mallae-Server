@@ -4,7 +4,11 @@ import com.practice.OAuth2.domain.attraction.dto.AttractionRequest;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
 import com.practice.OAuth2.domain.attraction.service.AttractionService;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +52,13 @@ public class AttractionController {
     public ResponseEntity<List<AttractionResponse>> testMyBatis() {
         List<AttractionResponse> results = attractionService.getAttractionListTest();
         return ResponseEntity.ok(results);
+    }
+
+    //상세 정보 조회 API
+    @GetMapping("/map/{attractionId}")
+    public ResponseEntity<AttractionResponse> getAttractionDetail(@PathVariable Integer attractionId) {
+        AttractionResponse result = attractionService.getAttractionDetail(attractionId);
+        return ResponseEntity.ok(result);
     }
 
 
