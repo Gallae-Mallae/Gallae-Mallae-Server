@@ -62,9 +62,10 @@ public class Plan extends BaseEntity {
         this.inviteCode = UUID.randomUUID().toString();
     }
 
-    public void update(String title, LocalDate startDate, LocalDate endDate) {
+    public void update(String title, LocalDate startDate, LocalDate endDate, String planImageUrl) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.planImageUrl = planImageUrl;
     }
 }
