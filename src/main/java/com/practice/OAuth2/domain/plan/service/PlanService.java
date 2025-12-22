@@ -11,6 +11,8 @@ import com.practice.OAuth2.domain.plan.repository.PlanMemberRepository;
 import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.domain.user.repository.UserRepository;
+
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,13 +31,25 @@ public class PlanService {
     // STOMP 메시지 전송용 (드래그 앤 드롭에 쓰임)
     private final SimpMessagingTemplate messagingTemplate;
 
+    private static final String SPRING_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/spring.png";
+    private static final String SUMMER_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/summer.png";
+    private static final String AUTUMN_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/autumn.png";
+    private static final String WINTER_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/winter.png";
+
     // 여행 생성
     @Transactional
     public PlanResponse createPlan(PlanCreateRequest request, Long userId){
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 사용자"));
 
-        Plan plan = request.toEntity();
+        String seasonalImageUrl = getSeasonalImageUrl(request.getStartDate());
+
+        Plan plan = Plan.builder()
+                .title(request.getTitle())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .planImageUrl(seasonalImageUrl) // 선정된 이미지 저장
+                .build();
         planRepository.save(plan);
 
         // 최초 등록
@@ -49,6 +63,20 @@ public class PlanService {
 
         // inviteCode가 포함된 응답이 나감
         return new PlanResponse(plan);
+    }
+
+    private String getSeasonalImageUrl(LocalDate startDate) {
+        int month = startDate.getMonthValue(); // 1~12
+
+        if (month >= 3 && month <= 5) {
+            return SPRING_IMAGE; // 3, 4, 5월 -> 봄
+        } else if (month >= 6 && month <= 8) {
+            return SUMMER_IMAGE; // 6, 7, 8월 -> 여름
+        } else if (month >= 9 && month <= 11) {
+            return AUTUMN_IMAGE; // 9, 10, 11월 -> 가을
+        } else {
+            return WINTER_IMAGE; // 12, 1, 2월 -> 겨울
+        }
     }
 
     // 친구 초대
