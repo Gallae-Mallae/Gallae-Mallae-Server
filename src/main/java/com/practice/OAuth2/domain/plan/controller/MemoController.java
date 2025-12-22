@@ -22,10 +22,12 @@ public class MemoController {
     private final MemoService memoService;
 
     // 메모 생성
-    @PostMapping
-    public ResponseEntity<Void> createMemo(@RequestBody MemoRequest request) {
+    @PostMapping("/{blockId}")
+    public ResponseEntity<Void> createMemo(
+            @PathVariable Long blockId,
+            @RequestBody MemoRequest request) {
         // blockId를 DTO에서 꺼내서 넘김
-        memoService.createMemo(request.getBlockId(), request);
+        memoService.createMemo(blockId, request);
         return ResponseEntity.ok().build();
     }
 
