@@ -1,6 +1,5 @@
 package com.practice.OAuth2.global.config;
 
-
 import com.practice.OAuth2.global.security.CustomUserDetailsService;
 import com.practice.OAuth2.global.security.RestAuthenticationEntryPoint;
 import com.practice.OAuth2.global.security.TokenAuthenticationFilter;
@@ -35,28 +34,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
-
     private final CustomOAuth2UserService customOAuth2UserService;
-
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
-
     private final TokenProvider tokenProvider;
-
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        // [2] 생성자에 필요한 의존성 2개를 넘겨줍니다.
         return new TokenAuthenticationFilter(tokenProvider, customUserDetailsService);
     }
 
-    /*
-      By default, Spring OAuth2 uses HttpSessionOAuth2AuthorizationRequestRepository to save
-      the authorization request. But, since our service is stateless, we can't save it in
-      the session. We'll save the request in a Base64 encoded cookie instead.
-    */
     @Bean
     public HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository() {
         return new HttpCookieOAuth2AuthorizationRequestRepository();
@@ -67,65 +55,59 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    protected SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
+    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors()
-                    .and()
+                .and()
                 .sessionManagement()
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    .and()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
                 .csrf()
-                    .disable()
+                .disable()
                 .formLogin()
-                    .disable()
+                .disable()
                 .httpBasic()
-                    .disable()
+                .disable()
                 .exceptionHandling()
-                    .authenticationEntryPoint(new RestAuthenticationEntryPoint())
-                    .and()
+                .authenticationEntryPoint(new RestAuthenticationEntryPoint())
+                .and()
                 .authorizeRequests()
-                    .requestMatchers("/health",
+                // 👇 [수정] 문제가 되던 /**.png 같은 패턴을 제거하고 명확한 경로만 허용합니다.
+                .requestMatchers(
+                        "/",
                         "/error",
                         "/favicon.ico",
-                        "/**.png",
-                        "/**.gif",
-                        "/**.svg",
-                        "/**.jpg",
-                        "/**.html",
-                        "/**.css",
-                        "/**.js")
-                        .permitAll()
-                .requestMatchers("/api/attractions/map/*/crawl")
-                        .permitAll()
-                .requestMatchers( "/api/auth/**", "/oauth2/**","/api/attractions/map/**","/api/attractions/map")
-                        .permitAll()
-                    .requestMatchers("/ws/**")
-                        .permitAll()
-                    .anyRequest()
-                        .authenticated()
-                    .and()
+                        "/health"
+                ).permitAll()
+                // 👇 [중요] AI 관련 API 허용
+                .requestMatchers("/api/ai/**").permitAll()
+                // 👇 기존 허용 경로들
+                .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
+                .requestMatchers("/api/attractions/map/**", "/api/attractions/map").permitAll()
+                .requestMatchers("/ws/**").permitAll()
+                .anyRequest()
+                .authenticated()
+                .and()
                 .oauth2Login()
-                    .authorizationEndpoint()
-                        .baseUri("/oauth2/authorization")
-                        .authorizationRequestRepository(cookieAuthorizationRequestRepository())
-                        .and()
-                    .redirectionEndpoint()
-                        .baseUri("/oauth2/callback/*")
-                        .and()
-                    .userInfoEndpoint()
-                        .userService(customOAuth2UserService) //로그인 후 후처리
-                        .and()
-                    .successHandler(oAuth2AuthenticationSuccessHandler)
-                    .failureHandler(oAuth2AuthenticationFailureHandler);
+                .authorizationEndpoint()
+                .baseUri("/oauth2/authorization")
+                .authorizationRequestRepository(cookieAuthorizationRequestRepository())
+                .and()
+                .redirectionEndpoint()
+                .baseUri("/oauth2/callback/*")
+                .and()
+                .userInfoEndpoint()
+                .userService(customOAuth2UserService)
+                .and()
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler);
 
-        // Add our custom Token based authentication filter
         http.addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
