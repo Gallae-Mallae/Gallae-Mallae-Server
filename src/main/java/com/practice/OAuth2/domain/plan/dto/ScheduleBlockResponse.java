@@ -3,6 +3,9 @@ package com.practice.OAuth2.domain.plan.dto;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
 import com.practice.OAuth2.domain.plan.entity.ScheduleBlock;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.Getter;
 
 @Getter
@@ -14,6 +17,7 @@ public class ScheduleBlockResponse {
     private String title;
     private LocalTime startTime;
     private LocalTime endTime;
+    private List<MemoResponse> memos;
 
     public ScheduleBlockResponse(ScheduleBlock block) {
         this.blockId = block.getBlockId();
@@ -28,5 +32,12 @@ public class ScheduleBlockResponse {
         this.title = block.getTitle();
         this.startTime = block.getStartTime();
         this.endTime = block.getEndTime();
+
+        // 엔티티의 메모 리스트를 DTO 리스트로 변환
+        if (block.getMemos() != null) {
+            this.memos = block.getMemos().stream()
+                    .map(MemoResponse::new)
+                    .collect(Collectors.toList());
+        }
     }
 }
