@@ -1,4 +1,4 @@
-services:
+services: # local 작업 용 compose.yml
   cache-server:
     image: redis
     ports:
@@ -23,40 +23,6 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  kafka:
-    image: apache/kafka:3.7.0
-    container_name: kafka-container
-    ports:
-      - "9092:9092"
-    environment:
-      # 기본 식별자
-      KAFKA_NODE_ID: 1
-
-      # KRaft 모드 역할 (이게 없으면 주키퍼 찾음)
-      KAFKA_PROCESS_ROLES: broker,controller
-
-      # 네트워크
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-
-      # 투표자 설정 (필수 - KRaft 리더 선출용)
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-
-      # 싱글 노드 강제 설정
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-
-      # 메모리 제한
-      KAFKA_HEAP_OPTS: "-Xmx400m -Xms400m"
-
-    volumes:
-      - kafka_data:/var/lib/kafka/data
-
 volumes:
   redis_data:
   mysql_data:
-  kafka_data:
