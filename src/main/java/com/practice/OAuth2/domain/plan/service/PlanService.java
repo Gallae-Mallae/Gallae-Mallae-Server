@@ -1,10 +1,6 @@
 package com.practice.OAuth2.domain.plan.service;
 
-import com.practice.OAuth2.domain.plan.dto.PlanCreateRequest;
-import com.practice.OAuth2.domain.plan.dto.PlanJoinRequest;
-import com.practice.OAuth2.domain.plan.dto.PlanMemberResponse;
-import com.practice.OAuth2.domain.plan.dto.PlanResponse;
-import com.practice.OAuth2.domain.plan.dto.PlanUpdateRequest;
+import com.practice.OAuth2.domain.plan.dto.*;
 import com.practice.OAuth2.domain.plan.entity.Plan;
 import com.practice.OAuth2.domain.plan.entity.PlanMember;
 import com.practice.OAuth2.domain.plan.repository.PlanMemberRepository;
@@ -14,8 +10,11 @@ import com.practice.OAuth2.domain.user.repository.UserRepository;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -77,6 +76,19 @@ public class PlanService {
         } else {
             return WINTER_IMAGE; // 12, 1, 2월 -> 겨울
         }
+    }
+
+    // 여행 목록 조회
+    @Transactional(readOnly = true)
+    public List<PlanListResponse> getMyPlans(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
+
+        // 내가 참여 중인 PlanMember 리스트 조회 -> Plan 정보 추출 -> DTO 변환
+        // (PlanMemberRepository에 해당 메서드가 정의되어 있어야 함)
+        return planMemberRepository.findByUser_UserIdAndLeftAtIsNullOrderByCreatedAtDesc(userId).stream()
+                .map(pm -> new PlanListResponse(pm.getPlan()))
+                .collect(Collectors.toList());
     }
 
     // 친구 초대
