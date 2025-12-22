@@ -2,18 +2,14 @@ package com.practice.OAuth2.domain.plan.entity;
 
 import com.practice.OAuth2.domain.attraction.entity.Attraction;
 import com.practice.OAuth2.global.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,6 +54,13 @@ public class ScheduleBlock extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // 양방향 매핑 추가
+    // 블록 조회할때 메모도 같이 조회
+    @OneToMany(mappedBy = "scheduleBlock", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OrderBy("orderIndex ASC")
+    @Builder.Default
+    private List<Memo> memos = new ArrayList<>();
 
     // 블록 옮기기
     public void changePosition(Integer day, LocalTime startTime) {

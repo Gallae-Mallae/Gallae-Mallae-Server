@@ -5,12 +5,16 @@ import com.practice.OAuth2.domain.attraction.repository.AttractionRepository;
 import com.practice.OAuth2.domain.plan.dto.ScheduleCreateRequest;
 import com.practice.OAuth2.domain.plan.entity.Plan;
 import com.practice.OAuth2.domain.plan.entity.ScheduleBlock;
+import com.practice.OAuth2.domain.plan.repository.PlanMemberRepository;
 import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.plan.repository.ScheduleBlockRepository;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.cache.CacheProperties.Redis;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,6 +32,7 @@ public class ScheduleService {
     private final PlanRepository planRepository;
     private final AttractionRepository attractionRepository;
     private final ScheduleBlockRepository scheduleBlockRepository;
+    private final PlanMemberRepository planMemberRepository;
 
     // 알림 전송용(web socket)
     private final SimpMessagingTemplate messagingTemplate;
@@ -37,6 +42,26 @@ public class ScheduleService {
 
     // Redis Lock 키 접두사
     private static final String LOCK_PREFIX = "plan:lock:";
+
+    // 내 여행계획의 스케줄 조회
+    @Transactional(readOnly = true)
+    public List<ScheduleBlockResponse> getSchedules(Long userId, Long planId) {
+
+        // 권한 체크
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+
+        if (!isMember) {
+            throw new IllegalArgumentException("이 여행에 접근할 권한이 없습니다.");
+        }
+
+        // 스케줄 조회 (날짜 -> 시간 순)
+        List<ScheduleBlock> blocks = scheduleBlockRepository.findAllByPlan_PlanIdOrderByDayAscStartTimeAsc(planId);
+
+        // DTO 변환
+        return blocks.stream()
+                .map(ScheduleBlockResponse::new)
+                .collect(Collectors.toList());
+    }
 
     // 블록 생성
     public void createScheduleBlock(Long planId, ScheduleCreateRequest request) {

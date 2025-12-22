@@ -19,7 +19,7 @@ public interface PlanMemberRepository extends JpaRepository<PlanMember, Long> {
 
     // 2. 내가 참여 중인 여행 목록 조회
     @EntityGraph(attributePaths = {"plan"})
-    List<PlanMember> findByUser_UserIdAndLeftAtIsNull(Long userId);
+    List<PlanMember> findByUser_UserIdAndLeftAtIsNullOrderByCreatedAtDesc(Long userId);
 
     // 3. 특정 유저가 이 방에 들어온 적이 있는지 확인 (재입장 로직용)
     // leftAt 상관없이 기록 자체를 찾음

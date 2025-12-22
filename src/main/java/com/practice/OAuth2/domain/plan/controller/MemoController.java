@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/memos") // ★ 여기를 주목! 모든 요청의 시작점
@@ -20,10 +22,12 @@ public class MemoController {
     private final MemoService memoService;
 
     // 메모 생성
-    @PostMapping
-    public ResponseEntity<Void> createMemo(@RequestBody MemoRequest request) {
+    @PostMapping("/{blockId}")
+    public ResponseEntity<Void> createMemo(
+            @PathVariable Long blockId,
+            @RequestBody MemoRequest request) {
         // blockId를 DTO에서 꺼내서 넘김
-        memoService.createMemo(request.getBlockId(), request);
+        memoService.createMemo(blockId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -41,6 +45,15 @@ public class MemoController {
     @DeleteMapping("/{memoId}")
     public ResponseEntity<Void> deleteMemo(@PathVariable Long memoId) {
         memoService.deleteMemo(memoId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{blockId}/order")
+    public ResponseEntity<Void> reorderMemos(
+            @PathVariable Long blockId,
+            @RequestBody List<Long> memoIds
+    ) {
+        memoService.reorderMemos(blockId, memoIds);
         return ResponseEntity.ok().build();
     }
 }

@@ -1,19 +1,20 @@
 package com.practice.OAuth2.domain.plan.service;
 
-import com.practice.OAuth2.domain.plan.dto.PlanCreateRequest;
-import com.practice.OAuth2.domain.plan.dto.PlanJoinRequest;
-import com.practice.OAuth2.domain.plan.dto.PlanMemberResponse;
-import com.practice.OAuth2.domain.plan.dto.PlanResponse;
-import com.practice.OAuth2.domain.plan.dto.PlanUpdateRequest;
+import com.practice.OAuth2.domain.plan.dto.*;
 import com.practice.OAuth2.domain.plan.entity.Plan;
 import com.practice.OAuth2.domain.plan.entity.PlanMember;
 import com.practice.OAuth2.domain.plan.repository.PlanMemberRepository;
 import com.practice.OAuth2.domain.plan.repository.PlanRepository;
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.domain.user.repository.UserRepository;
+
+import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,25 @@ public class PlanService {
     // STOMP 메시지 전송용 (드래그 앤 드롭에 쓰임)
     private final SimpMessagingTemplate messagingTemplate;
 
+    private static final String SPRING_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/spring.png";
+    private static final String SUMMER_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/summer.png";
+    private static final String AUTUMN_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/autumn.png";
+    private static final String WINTER_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/winter.png";
+
     // 여행 생성
     @Transactional
     public PlanResponse createPlan(PlanCreateRequest request, Long userId){
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 사용자"));
 
-        Plan plan = request.toEntity();
+        String seasonalImageUrl = getSeasonalImageUrl(request.getStartDate());
+
+        Plan plan = Plan.builder()
+                .title(request.getTitle())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .planImageUrl(seasonalImageUrl) // 선정된 이미지 저장
+                .build();
         planRepository.save(plan);
 
         // 최초 등록
@@ -49,6 +62,33 @@ public class PlanService {
 
         // inviteCode가 포함된 응답이 나감
         return new PlanResponse(plan);
+    }
+
+    private String getSeasonalImageUrl(LocalDate startDate) {
+        int month = startDate.getMonthValue(); // 1~12
+
+        if (month >= 3 && month <= 5) {
+            return SPRING_IMAGE; // 3, 4, 5월 -> 봄
+        } else if (month >= 6 && month <= 8) {
+            return SUMMER_IMAGE; // 6, 7, 8월 -> 여름
+        } else if (month >= 9 && month <= 11) {
+            return AUTUMN_IMAGE; // 9, 10, 11월 -> 가을
+        } else {
+            return WINTER_IMAGE; // 12, 1, 2월 -> 겨울
+        }
+    }
+
+    // 여행 목록 조회
+    @Transactional(readOnly = true)
+    public List<PlanListResponse> getMyPlans(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자"));
+
+        // 내가 참여 중인 PlanMember 리스트 조회 -> Plan 정보 추출 -> DTO 변환
+        // (PlanMemberRepository에 해당 메서드가 정의되어 있어야 함)
+        return planMemberRepository.findByUser_UserIdAndLeftAtIsNullOrderByCreatedAtDesc(userId).stream()
+                .map(pm -> new PlanListResponse(pm.getPlan()))
+                .collect(Collectors.toList());
     }
 
     // 친구 초대
@@ -97,8 +137,11 @@ public class PlanService {
 
         // 권한 체크
 
+        // 기간 변경시 사진도 변경
+        String newSeasonalImageUrl = getSeasonalImageUrl(request.getStartDate());
+
         // 데이터 수정
-        plan.update(request.getTitle(), request.getStartDate(), request.getEndDate());
+        plan.update(request.getTitle(), request.getStartDate(), request.getEndDate(), newSeasonalImageUrl);
 
         // [STOMP] PLAN_UPDATED 알림 전송
         // 변경된 Plan 정보를 모두에게 발행
