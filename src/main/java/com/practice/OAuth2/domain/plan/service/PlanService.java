@@ -84,7 +84,7 @@ public class PlanService {
 
         // STOMP 알림 전송 (화면 갱신해야 하니까)
         PlanMemberResponse responseDto = new PlanMemberResponse(planMember);
-        messagingTemplate.convertAndSend("/topic/plans/" + plan.getPlanId(), responseDto);
+        sendStompMessage(plan.getPlanId(), "MEMBER_JOINED", responseDto);
 
         return plan.getPlanId();
     }
