@@ -20,17 +20,13 @@ public class PlanCreateRequest {
     @NonNull
     private LocalDate endDate;
 
-    @NonNull
-    private String planImageUrl;
-
-    // DTO -> Entity 변환 메서드 (서비스 로직 단축용)
-    public Plan toEntity() {
-        return Plan.builder()
-                .title(this.title)
-                .startDate(this.startDate)
-                .endDate(this.endDate)
-                .planImageUrl(this.planImageUrl)
-                .build();
-        // inviteCode는 엔티티 생성자(Builder) 안에서 자동 생성
-    }
+//    // DTO -> Entity 변환 메서드 (서비스 로직 단축용)
+//    public Plan toEntity() {
+//        return Plan.builder()
+//                .title(this.title)
+//                .startDate(this.startDate)
+//                .endDate(this.endDate)
+//                .build();
+//        // inviteCode는 엔티티 생성자(Builder) 안에서 자동 생성
+//    }
 }
