@@ -39,4 +39,9 @@ public class PlaceLike extends BaseEntity {
     @JoinColumn(name = "attr_id", nullable = false)
     private Attraction attraction;
 
+    public PlaceLike(User user, Attraction attraction) {
+        this.user = user;
+        this.attraction = attraction;
+    }
+
 }

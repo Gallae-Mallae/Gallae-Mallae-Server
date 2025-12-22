@@ -1,4 +1,5 @@
 package com.practice.OAuth2.domain.scrap.service;
+import com.practice.OAuth2.domain.scrap.dto.LinkMetadataResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapFolderResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
 import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
@@ -23,6 +24,7 @@ public class ScrapService {
     private final ScrapFolderRepository scrapFolderRepository;
     private final ScrapRepository scrapRepository;
     private final UserRepository userRepository;
+    private final UrlMetadataService urlMetadataService;
 
     // 스크랩 폴더 생성
     public Long createScrapFolder(Long userId, ScrapReqest.CreateScrapFolder req){
@@ -93,7 +95,6 @@ public class ScrapService {
         Scrap scrap = Scrap.builder()
                 .scrapFolder(folder)
                 .title(req.getTitle())
-                .content(req.getContent())
                 .description(req.getDescription())
                 .originalLink(req.getOriginalLink())
                 .imageUrl(req.getImageUrl())
@@ -113,7 +114,7 @@ public class ScrapService {
                 .collect(Collectors.toList());
     }
 
-    // 스크랩 수정
+    // 스크랩 수정 + 링크 변경시 자동 스크래핑
     public void updateScrap(Long userId, Long scrapId, ScrapReqest.UpdateScrap req) {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
@@ -121,7 +122,21 @@ public class ScrapService {
         // 권한 확인
         validateScrapOwnership(scrap, userId);
 
-        scrap.updateScrap(req.getTitle(), req.getContent(), req.getDescription(), req.getOriginalLink(), req.getImageUrl());
+        String newLink = req.getOriginalLink();
+        String newImageUrl = scrap.getImageUrl(); // 기본값: 기존 유지
+        String newContent = scrap.getContent();   // 기본값: 기존 OGP설명 유지
+
+        // 링크가 존재 + 기존과 다르다면 -> 다시 긁어오기
+        if (newLink != null && !newLink.equals(scrap.getOriginalLink())) {
+            // 새 주소로 메타데이터 긁어오기
+            LinkMetadataResponse metadata = urlMetadataService.extractMetadata(newLink);
+
+            // 이미지와 OGP설명(content) 교체
+            newImageUrl = metadata.getImageUrl();
+            newContent = metadata.getDescription(); // OGP 설명을 content 필드에 저장
+        }
+
+        scrap.updateScrap(req.getTitle(), req.getDescription(), newLink, newImageUrl, newContent);
     }
 
     // 스크랩 삭제
