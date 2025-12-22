@@ -15,7 +15,7 @@ public class UrlMetadataService {
         try {
             // 1. 해당 URL의 HTML 문서를 가져옴 (타임아웃 5초 설정)
             Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3") // 브라우저인 척 위장
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36") // 브라우저인 척 위장
                     .timeout(5000)
                     .get();
 
