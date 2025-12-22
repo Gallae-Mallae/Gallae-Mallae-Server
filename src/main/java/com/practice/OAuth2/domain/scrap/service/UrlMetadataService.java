@@ -16,6 +16,7 @@ public class UrlMetadataService {
             // 1. 해당 URL의 HTML 문서를 가져옴 (타임아웃 5초 설정)
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36") // 브라우저인 척 위장
+                    .referrer("http://www.google.com")
                     .timeout(5000)
                     .get();
 
@@ -46,10 +47,15 @@ public class UrlMetadataService {
     }
 
     // 메타 태그 내용 추출 헬퍼 메서드
-    private String getMetaTagContent(Document doc, String property) {
-        Element element = doc.select("meta[property=" + property + "]").first();
-        if (element != null) {
-            return element.attr("content");
+    private String getMetaTagContent(Document doc, String... keys) {
+        for (String key : keys) {
+            // 1. property="key" 검색 (예: <meta property="og:image">)
+            Element element = doc.select("meta[property=" + key + "]").first();
+            if (element != null) return element.attr("content");
+
+            // 2. name="key" 검색 (예: <meta name="twitter:image">)
+            element = doc.select("meta[name=" + key + "]").first();
+            if (element != null) return element.attr("content");
         }
         return null;
     }
