@@ -1,6 +1,5 @@
 package com.practice.OAuth2.global.config;
 
-
 import com.practice.OAuth2.global.security.CustomUserDetailsService;
 import com.practice.OAuth2.global.security.RestAuthenticationEntryPoint;
 import com.practice.OAuth2.global.security.TokenAuthenticationFilter;
@@ -56,14 +55,13 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    protected SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
+    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors()
                 .and()
@@ -80,26 +78,19 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new RestAuthenticationEntryPoint())
                 .and()
                 .authorizeRequests()
-                .requestMatchers("/health",
+                // 👇 [수정] 문제가 되던 /**.png 같은 패턴을 제거하고 명확한 경로만 허용합니다.
+                .requestMatchers(
+                        "/",
                         "/error",
                         "/favicon.ico",
-                        "/**.png",
-                        "/**.gif",
-                        "/**.svg",
-                        "/**.jpg",
-                        "/**.html",
-                        "/**.css",
-                        "/**.js")
-                .permitAll()
-                .requestMatchers("/api/attractions/map/*/crawl")
-                .permitAll()
-                .requestMatchers( "/api/auth/**", "/oauth2/**","/api/attractions/map/**","/api/attractions/map")
-                .permitAll()
-                // 👇 [추가된 부분] AI 관련 API는 인증 없이 호출 가능하게 설정
-                .requestMatchers("/api/ai/**")
-                .permitAll()
-                .requestMatchers("/ws/**")
-                .permitAll()
+                        "/health"
+                ).permitAll()
+                // 👇 [중요] AI 관련 API 허용
+                .requestMatchers("/api/ai/**").permitAll()
+                // 👇 기존 허용 경로들
+                .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
+                .requestMatchers("/api/attractions/map/**", "/api/attractions/map").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
