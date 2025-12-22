@@ -33,9 +33,10 @@ public class Scrap extends BaseEntity {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String content;
+    private String content; // 웹페이지 설명(스크래핑으로 받아옴)
 
-    private String description;
+    @Column(columnDefinition = "TEXT")
+    private String description; // 사용자가 적는 스크랩에 대한 메모
 
     @Column(name = "original_link")
     private String originalLink;
@@ -57,9 +58,9 @@ public class Scrap extends BaseEntity {
     // update Scrap
     public void updateScrap(String title, String content, String description, String originalLink, String imageUrl) {
         this.title = title;
-        this.content = content;
         this.description = description;
         this.originalLink = originalLink;
         this.imageUrl = imageUrl;
+        this.content = content;
     }
 }

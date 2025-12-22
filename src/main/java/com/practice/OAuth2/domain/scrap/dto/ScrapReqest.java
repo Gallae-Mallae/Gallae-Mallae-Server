@@ -18,9 +18,9 @@ public class ScrapReqest {
     @NoArgsConstructor
     public static class CreateScrap {
         private String title;
-        private String content;
         private String description;
         private String originalLink;
+        private String content; // OGP 설명
         private String imageUrl;
     }
 
@@ -29,10 +29,10 @@ public class ScrapReqest {
     @NoArgsConstructor
     public static class UpdateScrap {
         private String title;
-        private String content;
         private String description;
         private String originalLink;
-        private String imageUrl;
+        //private String imageUrl; // url바뀌면 서버가 자동으로 갱신
+        //private String content; // 자동 갱신
     }
 
     // scrap folder 수정하기
