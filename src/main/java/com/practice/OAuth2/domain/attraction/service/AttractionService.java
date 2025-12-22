@@ -21,8 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional
 public class AttractionService {
     private final AttractionRepository attractionRepository;
-
     private final AttractionMapper attractionMapper;
+    private final com.practice.OAuth2.domain.attraction.repository.PlaceLikeRepository placeLikeRepository;
+    private final com.practice.OAuth2.domain.user.repository.UserRepository userRepository;
 
     public List<AttractionResponse> searchAttractions(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -108,5 +109,35 @@ public class AttractionService {
         return attractionMapper.findAllAttractions();
     }
 
+    @Transactional
+    public void toggleLike(Long userId, Integer attractionId) {
+        com.practice.OAuth2.domain.user.entity.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        Attraction attraction = attractionRepository.findById(attractionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attraction not found"));
+
+        placeLikeRepository.findByUserAndAttraction(user, attraction)
+                .ifPresentOrElse(
+                        placeLike -> {
+                            placeLikeRepository.delete(placeLike);
+                            attractionRepository.decrementLikeCount(attractionId);
+                        },
+                        () -> {
+                            com.practice.OAuth2.domain.attraction.entity.PlaceLike newLike = new com.practice.OAuth2.domain.attraction.entity.PlaceLike(user, attraction);
+                            placeLikeRepository.save(newLike);
+                            attractionRepository.incrementLikeCount(attractionId);
+                        }
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttractionResponse> getMyLikedAttractions(Long userId) {
+        com.practice.OAuth2.domain.user.entity.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        return placeLikeRepository.findAllByUser(user).stream()
+                .map(placeLike -> new AttractionResponse(placeLike.getAttraction()))
+                .collect(Collectors.toList());
+    }
 }
