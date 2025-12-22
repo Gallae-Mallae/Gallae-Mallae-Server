@@ -43,6 +43,18 @@ public class ScheduleController {
         return ResponseEntity.ok(scheduleService.getSchedules(user.getUserId(), planId));
     }
 
+    // 특정day 스케줄 블럭 조회
+    @GetMapping("/{planId}/days/{day}")
+    public ResponseEntity<List<ScheduleBlockResponse>> getSchedulesByDay(
+            @PathVariable Long planId,
+            @PathVariable Integer day,
+            @AuthenticationPrincipal UserDetails userDetails // 또는 UserPrincipal
+    ) {
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+
+        return ResponseEntity.ok(scheduleService.getSchedulesByDay(user.getUserId(), planId, day));
+    }
+
     // 스케줄 블록 시간 늘리기
     @PatchMapping("/{blockId}/resize")
     public ResponseEntity<Void> resizeBlock(
