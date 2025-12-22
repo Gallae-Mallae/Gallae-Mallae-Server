@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+
 @Service
 public class UrlMetadataService {
 
@@ -19,6 +20,20 @@ public class UrlMetadataService {
                     .referrer("http://www.google.com")
                     .timeout(5000)
                     .get();
+
+            // 네이버 전용 (iframe)
+            if (url.contains("blog.naver.com")) {
+                Element iframe = doc.select("iframe#mainFrame").first();
+                if (iframe != null) {
+                    String realUrl = "https://blog.naver.com" + iframe.attr("src");
+                    // 진짜 주소로 문서를 교체 (덮어쓰기)
+                    doc = Jsoup.connect(realUrl)
+                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                            .referrer("http://www.google.com")
+                            .timeout(5000)
+                            .get();
+                }
+            }
 
             // 2. Open Graph 태그 파싱
             String title = getMetaTagContent(doc, "og:title");
