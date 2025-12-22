@@ -17,6 +17,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -47,6 +49,9 @@ public class Memo extends BaseEntity {
 
     @Column(name = "order_index")
     private Integer orderIndex;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public void update(String content, String linkUrl, String type) {
         this.content = content;

@@ -12,6 +12,7 @@ public class MemoResponse {
     private String content;
     private String linkUrl;
     private String type;
+    private Integer orderIndex;
 
     // Entity -> DTO 변환 생성자
     public MemoResponse(Memo memo) {
@@ -20,5 +21,6 @@ public class MemoResponse {
         this.content = memo.getContent();
         this.linkUrl = memo.getLinkUrl();
         this.type = memo.getType();
+        this.orderIndex = memo.getOrderIndex();
     }
 }
