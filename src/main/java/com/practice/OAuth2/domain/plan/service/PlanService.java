@@ -129,6 +129,21 @@ public class PlanService {
         return plan.getPlanId();
     }
 
+    // 여행 참여자 목록 조회
+    @Transactional(readOnly = true)
+    public List<PlanMemberResponse> getPlanMembers(Long userId, Long planId) {
+        // 권한 체크
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("해당 여행의 멤버 목록을 조회할 권한이 없습니다.");
+        }
+
+        // 멤버 목록 조회 및 DTO 변환
+        return planMemberRepository.findByPlan_PlanIdAndLeftAtIsNull(planId).stream()
+                .map(PlanMemberResponse::new)
+                .collect(Collectors.toList());
+    }
+
     // 여행 수정 (제목, 기간)
     @Transactional
     public void updatePlan(Long planId, PlanUpdateRequest request) {

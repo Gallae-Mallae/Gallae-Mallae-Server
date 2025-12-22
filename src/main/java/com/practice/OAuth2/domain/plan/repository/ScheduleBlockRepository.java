@@ -13,4 +13,8 @@ public interface ScheduleBlockRepository extends JpaRepository<ScheduleBlock, Lo
     // 엔티티그래프 설정 : 스케줄 블록 가져올 때 attraction 정보도 미리 조인(JOIN FETCH)해서 한 방에 가져와
     @EntityGraph(attributePaths = {"attraction"})
     List<ScheduleBlock> findAllByPlan_PlanIdOrderByDayAscStartTimeAsc(Long planId);
+
+    // 특정 day의 스케줄 조회 (시간순 정렬)
+    @EntityGraph(attributePaths = {"attraction"})
+    List<ScheduleBlock> findAllByPlan_PlanIdAndDayOrderByStartTimeAsc(Long planId, Integer day);
 }

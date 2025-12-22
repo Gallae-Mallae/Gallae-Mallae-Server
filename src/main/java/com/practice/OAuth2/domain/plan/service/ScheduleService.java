@@ -43,7 +43,7 @@ public class ScheduleService {
     // Redis Lock 키 접두사
     private static final String LOCK_PREFIX = "plan:lock:";
 
-    // 내 여행계획의 스케줄 조회
+    // 여행계획 스케줄 전체 블럭 조회
     @Transactional(readOnly = true)
     public List<ScheduleBlockResponse> getSchedules(Long userId, Long planId) {
 
@@ -63,7 +63,25 @@ public class ScheduleService {
                 .collect(Collectors.toList());
     }
 
-    // 블록 생성
+    // day별 스케줄 블럭 조회
+    @Transactional(readOnly = true)
+    public List<ScheduleBlockResponse> getSchedulesByDay(Long userId, Long planId, Integer day) {
+        // 권한 체크
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("이 여행에 접근할 권한이 없습니다.");
+        }
+
+        // day의 스케줄만 조회
+        List<ScheduleBlock> blocks = scheduleBlockRepository.findAllByPlan_PlanIdAndDayOrderByStartTimeAsc(planId, day);
+
+        // DTO 변환
+        return blocks.stream()
+                .map(ScheduleBlockResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    // 블럭 생성
     public void createScheduleBlock(Long planId, ScheduleCreateRequest request) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
@@ -105,7 +123,7 @@ public class ScheduleService {
         }
     }
 
-    // 블록 크기 조절
+    // 블럭 크기 조절
     public void resizeScheduleBlock(Long blockId) {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
@@ -133,7 +151,7 @@ public class ScheduleService {
         }
     }
 
-    // 블록 이동
+    // 블럭 이동
     public void moveScheduleBlock(Long userId, Long blockId, Integer newDay, LocalTime newStartTime) {
         // 1. 블록 조회
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
@@ -150,21 +168,21 @@ public class ScheduleService {
         // 이 방 멤버인지 확인 필요?
 
         try{
-            // 블록 옮겼을때 바뀐 정보 업데이트
+            // 블럭 옮겼을때 바뀐 정보 업데이트
             block.changePosition(newDay, newStartTime);
 
             ScheduleBlockResponse response = new ScheduleBlockResponse(block);
-            // 변경된 블록 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
-            // "UPDATE"라는 신호와 함께 변경된 블록 정보를 보냄
+            // 변경된 블럭 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
+            // "UPDATE"라는 신호와 함께 변경된 블럭 정보를 보냄
             sendStompMessage(planId, "BLOCK_MOVED", response);
         }finally{
             unlock(lockKey);
         }
     }
 
-    // 블록 삭제
+    // 블럭 삭제
     public void deleteScheduleBlock(Long userId, Long blockId) {
-        // 1. 블록 조회
+        // 1. 블럭 조회
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
@@ -182,8 +200,8 @@ public class ScheduleService {
             scheduleBlockRepository.delete(block);
 
             // [STOMP] 삭제 알림 전송
-            // 삭제된 블록의 ID만 보내도 되지만, 프론트 처리를 위해 기존처럼 전체 정보를 보내줍니다.
-            // (프론트에서 "어떤 블록이 삭제됐는지" 확인 후 DOM에서 제거)
+            // 삭제된 블럭의 ID만 보내도 되지만, 프론트 처리를 위해 기존처럼 전체 정보를 보내줍니다.
+            // (프론트에서 "어떤 블럭이 삭제됐는지" 확인 후 DOM에서 제거)
             ScheduleBlockResponse response = new ScheduleBlockResponse(block);
             sendStompMessage(planId, "BLOCK_DELETED", response);
 
