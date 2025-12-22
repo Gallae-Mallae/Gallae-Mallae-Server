@@ -4,6 +4,8 @@ import com.practice.OAuth2.domain.attraction.dto.AttractionRequest;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
 import com.practice.OAuth2.domain.attraction.service.AttractionService;
+import com.practice.OAuth2.global.security.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.HashMap;
 import java.util.List;
@@ -61,8 +63,20 @@ public class AttractionController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/{attractionId}/likes")
+    public ResponseEntity<Void> toggleLike(
+            @PathVariable Integer attractionId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        attractionService.toggleLike(userPrincipal.getId(), attractionId);
+        return ResponseEntity.ok().build();
+    }
 
-
-
-
+    @GetMapping("/likes/my")
+    public ResponseEntity<List<AttractionResponse>> getMyLikedAttractions(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        List<AttractionResponse> result = attractionService.getMyLikedAttractions(userPrincipal.getId());
+        return ResponseEntity.ok(result);
+    }
 }
