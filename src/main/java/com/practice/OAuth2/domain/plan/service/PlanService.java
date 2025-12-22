@@ -125,8 +125,11 @@ public class PlanService {
 
         // 권한 체크
 
+        // 기간 변경시 사진도 변경
+        String newSeasonalImageUrl = getSeasonalImageUrl(request.getStartDate());
+
         // 데이터 수정
-        plan.update(request.getTitle(), request.getStartDate(), request.getEndDate());
+        plan.update(request.getTitle(), request.getStartDate(), request.getEndDate(), newSeasonalImageUrl);
 
         // [STOMP] PLAN_UPDATED 알림 전송
         // 변경된 Plan 정보를 모두에게 발행
