@@ -35,28 +35,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
-
     private final CustomOAuth2UserService customOAuth2UserService;
-
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
-
     private final TokenProvider tokenProvider;
-
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Bean
     public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        // [2] 생성자에 필요한 의존성 2개를 넘겨줍니다.
         return new TokenAuthenticationFilter(tokenProvider, customUserDetailsService);
     }
 
-    /*
-      By default, Spring OAuth2 uses HttpSessionOAuth2AuthorizationRequestRepository to save
-      the authorization request. But, since our service is stateless, we can't save it in
-      the session. We'll save the request in a Base64 encoded cookie instead.
-    */
     @Bean
     public HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository() {
         return new HttpCookieOAuth2AuthorizationRequestRepository();
@@ -77,21 +66,21 @@ public class SecurityConfig {
     protected SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
         http
                 .cors()
-                    .and()
+                .and()
                 .sessionManagement()
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    .and()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
                 .csrf()
-                    .disable()
+                .disable()
                 .formLogin()
-                    .disable()
+                .disable()
                 .httpBasic()
-                    .disable()
+                .disable()
                 .exceptionHandling()
-                    .authenticationEntryPoint(new RestAuthenticationEntryPoint())
-                    .and()
+                .authenticationEntryPoint(new RestAuthenticationEntryPoint())
+                .and()
                 .authorizeRequests()
-                    .requestMatchers("/health",
+                .requestMatchers("/health",
                         "/error",
                         "/favicon.ico",
                         "/**.png",
@@ -101,31 +90,33 @@ public class SecurityConfig {
                         "/**.html",
                         "/**.css",
                         "/**.js")
-                        .permitAll()
+                .permitAll()
                 .requestMatchers("/api/attractions/map/*/crawl")
-                        .permitAll()
+                .permitAll()
                 .requestMatchers( "/api/auth/**", "/oauth2/**","/api/attractions/map/**","/api/attractions/map")
-                        .permitAll()
-                    .requestMatchers("/ws/**")
-                        .permitAll()
-                    .anyRequest()
-                        .authenticated()
-                    .and()
+                .permitAll()
+                // 👇 [추가된 부분] AI 관련 API는 인증 없이 호출 가능하게 설정
+                .requestMatchers("/api/ai/**")
+                .permitAll()
+                .requestMatchers("/ws/**")
+                .permitAll()
+                .anyRequest()
+                .authenticated()
+                .and()
                 .oauth2Login()
-                    .authorizationEndpoint()
-                        .baseUri("/oauth2/authorization")
-                        .authorizationRequestRepository(cookieAuthorizationRequestRepository())
-                        .and()
-                    .redirectionEndpoint()
-                        .baseUri("/oauth2/callback/*")
-                        .and()
-                    .userInfoEndpoint()
-                        .userService(customOAuth2UserService) //로그인 후 후처리
-                        .and()
-                    .successHandler(oAuth2AuthenticationSuccessHandler)
-                    .failureHandler(oAuth2AuthenticationFailureHandler);
+                .authorizationEndpoint()
+                .baseUri("/oauth2/authorization")
+                .authorizationRequestRepository(cookieAuthorizationRequestRepository())
+                .and()
+                .redirectionEndpoint()
+                .baseUri("/oauth2/callback/*")
+                .and()
+                .userInfoEndpoint()
+                .userService(customOAuth2UserService)
+                .and()
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler);
 
-        // Add our custom Token based authentication filter
         http.addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
