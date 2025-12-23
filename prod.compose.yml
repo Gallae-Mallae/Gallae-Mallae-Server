@@ -5,6 +5,9 @@ services:    # 컨테이너를 정의하는 서비스라고 선언
     image: 291234479386.dkr.ecr.ap-northeast-2.amazonaws.com/gallaemallae:latest # ECR 이미지 경로/이미지명:태그
     ports:
       - 8081:8080
+    volumes:
+      # 애플리케이션 로그를 호스트에 저장 (명명된 볼륨)
+      - /home/ubuntu/docker/server1/logs:/app/logs
     networks:
       - my-network
 
@@ -13,42 +16,11 @@ services:    # 컨테이너를 정의하는 서비스라고 선언
     image: 291234479386.dkr.ecr.ap-northeast-2.amazonaws.com/gallaemallae:latest # ECR 이미지 경로/이미지명:태그
     ports:
       - 8082:8080
-    networks:
-      - my-network
-
-  kafka:
-    image: apache/kafka:3.7.0
-    container_name: kafka-container
-    ports:
-      - "9092:9092"
-    networks:
-      - my-network
-    environment:
-      KAFKA_NODE_ID: 1 # 기본 식별자 지정
-      KAFKA_PROCESS_ROLES: broker,controller # KRaft 모드 역할 (이게 없으면 주키퍼 찾음)
-
-      # 네트워크
-      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:9092,INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://localhost:9092,INTERNAL://kafka-container:29092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
-
-      # 내부 통신은 INTERNAL 리스너를 기본으로 사용
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-
-      # 투표자 설정 (필수 - KRaft 리더 선출용)
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-container:9093
-
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-
-      # 메모리 제한
-      KAFKA_HEAP_OPTS: "-Xmx400m -Xms400m"
-
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      # 애플리케이션 로그를 호스트에 저장
+      - /home/ubuntu/docker/server2/logs:/app/logs
+    networks:
+      - my-network
 
 # 사용할 네트워크를 명시적으로 정의
 networks:
