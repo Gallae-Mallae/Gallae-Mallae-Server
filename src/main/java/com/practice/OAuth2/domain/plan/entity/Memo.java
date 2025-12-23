@@ -41,7 +41,7 @@ public class Memo extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "link_url")
+    @Column(name = "link_url", columnDefinition = "TEXT")
     private String linkUrl;
 
     @Column(length = 20)

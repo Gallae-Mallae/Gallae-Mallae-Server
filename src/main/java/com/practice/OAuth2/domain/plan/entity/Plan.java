@@ -42,7 +42,7 @@ public class Plan extends BaseEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(name = "plan_image_url")
+    @Column(name = "plan_image_url", columnDefinition = "TEXT")
     private String planImageUrl;
 
     // 추가: STOMP 방 입장/초대용 코드 (랜덤 UUID)
