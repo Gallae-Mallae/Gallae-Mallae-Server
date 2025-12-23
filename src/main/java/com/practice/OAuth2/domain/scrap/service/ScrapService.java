@@ -1,8 +1,7 @@
 package com.practice.OAuth2.domain.scrap.service;
 import com.practice.OAuth2.domain.scrap.dto.LinkMetadataResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapFolderResponse;
-import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
-import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
+import com.practice.OAuth2.domain.scrap.dto.ScrapRequest;
 import com.practice.OAuth2.domain.scrap.dto.ScrapResponse;
 import com.practice.OAuth2.domain.scrap.entity.Scrap;
 import com.practice.OAuth2.domain.scrap.entity.ScrapFolder;
@@ -27,13 +26,12 @@ public class ScrapService {
     private final UrlMetadataService urlMetadataService;
 
     // 스크랩 폴더 생성
-    public Long createScrapFolder(Long userId, ScrapReqest.CreateScrapFolder req){
+    public Long createScrapFolder(Long userId, ScrapRequest.CreateScrapFolder req){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 x"));
         ScrapFolder folder = ScrapFolder.builder()
                 .user(user)
                 .name(req.getName())
-                .folderImageUrl(req.getFolderImageUrl())
                 .build();
 
         return scrapFolderRepository.save(folder).getFolderId();
@@ -67,7 +65,7 @@ public class ScrapService {
     }
 
     // 스크랩 폴더 수정
-    public void updateScrapFolder(Long userId, Long folderId, ScrapReqest.UpdateScrapFolder req) {
+    public void updateScrapFolder(Long userId, Long folderId, ScrapRequest.UpdateScrapFolder req) {
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더가 없습니다."));
 
@@ -88,19 +86,34 @@ public class ScrapService {
     }
 
     //--------------------------------------------------------------------------------------------
-    // 스크랩 생성
-    public Long createScrap(Long userId, Long folderId, ScrapReqest.CreateScrap req){
+    // 스크랩 생성(+이미지 누락 시 자동 채움 기능)
+    public Long createScrap(Long userId, Long folderId, ScrapRequest.CreateScrap req){
         ScrapFolder folder = scrapFolderRepository.findById(folderId)
                 .orElseThrow(() -> new IllegalArgumentException("폴더 x"));
 
         validateFolderOwnership(folder, userId);
+
+        String imageUrl = req.getImageUrl();
+        String content = req.getContent(); // OGP 설명
+
+        if ((imageUrl == null || imageUrl.isEmpty()) && req.getOriginalLink() != null) {
+            try {
+                LinkMetadataResponse metadata = urlMetadataService.extractMetadata(req.getOriginalLink());
+                imageUrl = metadata.getImageUrl();
+                content = metadata.getDescription(); // 설명도 없으면 채워줌
+            } catch (Exception e) {
+                // 스크래핑 실패해도 스크랩 생성은 되어야 한다
+                // log.warn("Auto-scraping failed: {}", e.getMessage());
+            }
+        }
 
         Scrap scrap = Scrap.builder()
                 .scrapFolder(folder)
                 .title(req.getTitle())
                 .description(req.getDescription())
                 .originalLink(req.getOriginalLink())
-                .imageUrl(req.getImageUrl())
+                .imageUrl(imageUrl)
+                .content(content)
                 .build();
         return scrapRepository.save(scrap).getScrapId();
     }
@@ -118,7 +131,7 @@ public class ScrapService {
     }
 
     // 스크랩 수정 + 링크 변경시 자동 스크래핑
-    public void updateScrap(Long userId, Long scrapId, ScrapReqest.UpdateScrap req) {
+    public void updateScrap(Long userId, Long scrapId, ScrapRequest.UpdateScrap req) {
         Scrap scrap = scrapRepository.findById(scrapId)
                 .orElseThrow(() -> new IllegalArgumentException("스크랩이 없습니다."));
 

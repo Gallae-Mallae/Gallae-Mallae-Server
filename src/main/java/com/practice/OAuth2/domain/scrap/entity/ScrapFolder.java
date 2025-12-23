@@ -37,18 +37,14 @@ public class ScrapFolder extends BaseEntity {
     @Column(length = 100)
     private String name;
 
-    @Column(name = "folder_image_url", length = 1000)
-    private String folderImageUrl;
-
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     // 생성자 추가
     @Builder
-    public ScrapFolder(User user, String name, String folderImageUrl){
+    public ScrapFolder(User user, String name){
         this.user = user;
         this.name = name;
-        this.folderImageUrl = folderImageUrl;
     }
 
     // update ScrapFolder
