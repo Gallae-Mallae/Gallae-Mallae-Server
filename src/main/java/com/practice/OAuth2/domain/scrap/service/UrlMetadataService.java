@@ -36,9 +36,9 @@ public class UrlMetadataService {
             }
 
             // 2. Open Graph 태그 파싱
-            String title = getMetaTagContent(doc, "og:title");
-            String image = getMetaTagContent(doc, "og:image");
-            String description = getMetaTagContent(doc, "og:description");
+            String title = getMetaTagContent(doc, "og:title", "twitter:title", "title");
+            String image = getMetaTagContent(doc, "og:image", "twitter:image");
+            String description = getMetaTagContent(doc, "og:description", "twitter:description", "description");
 
             // 3. 만약 og 태그가 없으면 일반 title, img 태그에서 시도
             if (title == null || title.isEmpty()) {
