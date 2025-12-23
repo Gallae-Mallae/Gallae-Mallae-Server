@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,8 @@ public class AttractionService {
     private final AttractionMapper attractionMapper;
     private final com.practice.OAuth2.domain.attraction.repository.PlaceLikeRepository placeLikeRepository;
     private final com.practice.OAuth2.domain.user.repository.UserRepository userRepository;
+
+    private final StringRedisTemplate stringRedisTemplate;
 
     public List<AttractionResponse> searchAttractions(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -95,6 +98,13 @@ public class AttractionService {
 
     @Transactional(readOnly = true)
     public AttractionResponse getAttractionDetail(Integer attractionId) {
+        // 1. [실시간 랭킹용] ZSET 점수 +1 (랭킹에는 즉시 반영)
+        stringRedisTemplate.opsForZSet().incrementScore("ranking:attraction", String.valueOf(attractionId), 1);
+
+        // 2. [DB 반영용] Hash에 조회수 증가분 누적 (버퍼링)
+        // "view:sync_buffer"라는 맵 안에 placeId의 값을 1 올림
+        stringRedisTemplate.opsForHash().increment("view:sync_buffer", attractionId, 1);
+
         Attraction attraction = attractionRepository.findById(attractionId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "해당 여행지를 찾을 수 없습니다. ID: " + attractionId

@@ -21,14 +21,9 @@ public class RedisRepositoryConfig {
     private int port;
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(host, port);
-    }
-
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate() {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
 
         // Key, Value 직렬화 설정 (문자열 위주로 저장하므로 StringSerializer 사용)
         redisTemplate.setKeySerializer(new StringRedisSerializer());
