@@ -39,6 +39,15 @@ public class PlanController {
         return ResponseEntity.ok(planService.getMyPlans(principal.getId()));
     }
 
+    // 여행 참여자 목록 조회
+    @GetMapping("/{planId}/members")
+    public ResponseEntity<List<PlanMemberResponse>> getPlanMembers(
+            @PathVariable Long planId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(planService.getPlanMembers(principal.getId(), planId));
+    }
+
     // 초대 코드로 입장
     @PostMapping("/join")
     public ResponseEntity<Long> joinPlan(

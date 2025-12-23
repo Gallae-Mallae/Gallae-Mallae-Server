@@ -1,12 +1,7 @@
 package com.practice.OAuth2.domain.attraction.entity;
 
 import com.practice.OAuth2.global.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,8 +14,9 @@ public class Gugun extends BaseEntity {
     @Column(name = "guguns_id")
     private Integer gugunsId;
 
-    @Column(name = "sido_code", nullable = false)
-    private Integer sidoCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sido_code", referencedColumnName = "sido_code")
+    private Sido sido;
 
     @Column(name = "gugun_code", nullable = false)
     private Integer gugunCode;

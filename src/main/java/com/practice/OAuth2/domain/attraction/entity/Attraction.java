@@ -25,17 +25,19 @@ public class Attraction extends BaseEntity {
     private Integer attrId;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sido_code", referencedColumnName = "sido_code")
+    private Sido sido;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gugun_code", referencedColumnName = "gugun_code")
+    private Gugun gugun;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "content_type_id")
     private ContentType contentType;
 
     @Column(length = 500)
     private String title;
-
-    @Column(name = "sido_code")
-    private Integer sidoCode;
-
-    @Column(name = "gugun_code")
-    private Integer gugunCode;
 
     @Column(name = "first_image1", length = 100)
     private String firstImage1;
