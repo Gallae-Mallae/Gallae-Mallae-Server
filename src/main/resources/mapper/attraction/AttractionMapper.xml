@@ -3,6 +3,37 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.practice.OAuth2.domain.attraction.mapper.AttractionMapper">
+    <select id="findRagData" resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT
+            a.attr_id          AS attractionId,
+            a.title            AS title,
+            a.addr1            AS address,
+            a.first_image1     AS imageUrl,
+            a.overview         AS overview,
+            c.content_type_name AS contentTypeName
+        FROM attractions a
+                 LEFT JOIN contenttypes c ON a.content_type_id = c.content_type_id
+        WHERE
+            a.content_type_id IN (12, 25)
+           OR (a.overview IS NOT NULL AND CHAR_LENGTH(a.overview) >= 15)
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findAllByIds" resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT
+        a.attr_id          AS attractionId,
+        a.title            AS title,
+        a.addr1            AS address,
+        a.first_image1     AS imageUrl,
+        a.overview         AS overview,
+        c.content_type_name AS contentTypeName
+        FROM attractions a
+        LEFT JOIN contenttypes c ON a.content_type_id = c.content_type_id
+        WHERE a.attr_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
 
     <sql id="searchConditions">
         <where>

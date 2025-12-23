@@ -19,12 +19,15 @@ public class AttractionResponse2 {
     private String address;
     private String imageUrl;
 
-    // viewCount, likeCount, contentTypeId는 용량이 작고 유용하니 유지 추천!
     private Long viewCount;
     private Long likeCount;
     private Integer contentTypeId;
 
-
+    // ==========================================
+    // [추가] AI 분석 및 RAG용 필수 필드
+    // ==========================================
+    private String overview;        // 관광지 상세 설명 (DB의 overview 컬럼)
+    private String contentTypeName; // 유형 이름 (DB의 contenttypes 테이블 조인)
 
     public AttractionResponse2(Attraction attraction) {
         this.attractionId = attraction.getAttrId();
@@ -36,10 +39,12 @@ public class AttractionResponse2 {
         this.viewCount = attraction.getViewCount();
         this.likeCount = attraction.getLikeCount();
 
-
+        // Entity에서 가져올 때도 매핑 (기존 로직 유지용)
+        this.overview = attraction.getOverview();
 
         if (attraction.getContentType() != null) {
             this.contentTypeId = attraction.getContentType().getContentTypeId();
+            this.contentTypeName = attraction.getContentType().getContentTypeName(); // 추가
         }
 
         if (attraction.getLatitude() != null) {

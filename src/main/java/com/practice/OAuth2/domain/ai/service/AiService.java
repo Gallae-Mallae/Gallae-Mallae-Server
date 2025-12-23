@@ -1,18 +1,18 @@
 package com.practice.OAuth2.domain.ai.service;
 
 import com.practice.OAuth2.domain.ai.dto.AiResponse;
-import com.practice.OAuth2.domain.attraction.entity.Attraction;
-import com.practice.OAuth2.domain.attraction.repository.AttractionRepository;
+import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
+import com.practice.OAuth2.domain.attraction.mapper.AttractionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,258 +20,229 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AiService {
 
-    private final AttractionRepository attractionRepository;
+    private final AttractionMapper attractionMapper; // JPA Repository 대신 MyBatis Mapper 사용
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${ai.openai.api-key}")
     private String openAiKey;
-
     @Value("${ai.pinecone.api-key}")
-    private String pineconeKey;
-
+    private String pineconeKey;g
     @Value("${ai.pinecone.host}")
     private String pineconeHost;
 
     // =================================================================================
-    // 1. [Chat] RAG 채팅 기능 (GPT가 픽한 장소만 정확히 리턴 + 지역 필터링)
-    // =================================================================================
-    public AiResponse chat(String message) {
-        // 1. 임베딩 & 검색 (후보군을 넉넉히 15개 가져옴)
-        List<Double> queryVector = getOpenAiEmbedding(message);
-        List<Integer> attractionIds = searchPinecone(queryVector, 15);
-        List<Attraction> candidates = attractionRepository.findAllById(attractionIds);
-
-        if (candidates.isEmpty()) {
-            return new AiResponse("죄송합니다. 관련 여행지를 찾을 수 없습니다.", new ArrayList<>());
-        }
-
-        // 2. 프롬프트 구성
-        // 형식: ID: 123 | [카테고리] 제목 (주소): 설명
-        String context = candidates.stream()
-                .map(p -> {
-                    String category = (p.getContentType() != null) ? p.getContentType().getContentTypeName() : "기타";
-                    return String.format("ID: %d | [%s] %s (%s): %s",
-                            p.getAttrId(), category, p.getTitle(), p.getAddr1(), p.getOverview());
-                })
-                .collect(Collectors.joining("\n\n"));
-
-        // 3. 🚨 [핵심 명령] 답변 끝에 선택한 ID를 태그해달라고 지시
-        String systemPrompt = "당신은 한국 여행 가이드입니다. 제공된 [여행지 목록] 중에서 사용자의 질문에 가장 적합한 장소를 3개 이내로 골라 답변하세요.\n" +
-                "목록에 없는 장소는 절대 언급하지 마세요.\n" +
-                "★중요: 답변을 모두 마친 후, 맨 마지막 줄에 당신이 추천한 장소의 ID를 반드시 다음 형식으로 적어주세요.\n" +
-                "형식: [IDS: 123, 456]";
-
-        String userPrompt = String.format("[여행지 목록]\n%s\n\n사용자 질문: %s", context, message);
-
-        // 4. GPT 호출
-        String rawAnswer = callChatGpt(systemPrompt, userPrompt);
-
-        // 5. ✂️ [파싱] 답변 텍스트와 ID 분리하기
-        String aiMessage = rawAnswer;
-        List<Integer> selectedIds = new ArrayList<>();
-
-        int tagIndex = rawAnswer.lastIndexOf("[IDS:");
-
-        if (tagIndex != -1) {
-            // 태그 앞부분은 사용자에게 보여줄 메시지
-            aiMessage = rawAnswer.substring(0, tagIndex).trim();
-
-            // 태그 뒷부분에서 ID 추출
-            try {
-                String idsStr = rawAnswer.substring(tagIndex + 5).replace("]", "").trim();
-                if (!idsStr.isBlank()) {
-                    String[] idArray = idsStr.split(",");
-                    for (String id : idArray) {
-                        selectedIds.add(Integer.parseInt(id.trim()));
-                    }
-                }
-            } catch (Exception e) {
-                log.error("ID 파싱 중 오류 (형식 불일치): {}", rawAnswer);
-                // 파싱 실패 시, 상위 3개 사용 (Fallback)
-                selectedIds = attractionIds.subList(0, Math.min(attractionIds.size(), 3));
-            }
-        } else {
-            // 태그가 없으면 상위 3개 보여줌
-            selectedIds = attractionIds.subList(0, Math.min(attractionIds.size(), 3));
-        }
-
-        // 6. 최종 필터링: GPT가 선택한 ID만 리스트에 담기
-        List<Integer> finalSelectedIds = selectedIds;
-        List<AiResponse.PlaceInfo> placeInfos = candidates.stream()
-                .filter(p -> finalSelectedIds.contains(p.getAttrId()))
-                .map(p -> new AiResponse.PlaceInfo(
-                        p.getAttrId(), p.getTitle(), p.getAddr1(), p.getFirstImage1()))
-                .collect(Collectors.toList());
-
-        return new AiResponse(aiMessage, placeInfos);
-    }
-
-    // =================================================================================
-    // 2. [Sync] 데이터 동기화 (MySQL -> Pinecone)
-    // ★수정됨★: startPage 파라미터를 받아서 중단된 곳부터 시작 가능
+    // 1. [Sync] MySQL -> Pinecone 데이터 동기화
     // =================================================================================
     public void syncMysqlToPinecone(int startPage) {
-        int page = startPage; // 전달받은 페이지부터 시작 (예: 22)
-        int batchSize = 50;
-        log.info("=========== OpenAI 배치 동기화 시작 (Start Page: {}, Batch: {}) ===========", page, batchSize);
+        int page = startPage;
+        int batchSize = 10;
+        log.info("=========== [Sync] GPT 데이터 보강 시작 (Page: {}) ===========", page);
 
         while (true) {
-            Page<Attraction> attractionPage = attractionRepository.findRagData(PageRequest.of(page, batchSize));
-            if (attractionPage.isEmpty()) break;
+            int offset = page * batchSize;
 
-            List<Attraction> attractions = attractionPage.getContent();
+            // MyBatis Mapper 호출 (DTO 리스트 반환)
+            List<AttractionResponse2> attractions = attractionMapper.findRagData(batchSize, offset);
+
+            if (attractions.isEmpty()) break;
 
             try {
-                List<String> textList = new ArrayList<>();
+                List<String> embedTexts = new ArrayList<>();
                 List<String> idList = new ArrayList<>();
+                List<Map<String, Object>> metadataList = new ArrayList<>();
 
-                for (Attraction attr : attractions) {
-                    String category = "기타";
-                    if (attr.getContentType() != null) {
-                        category = attr.getContentType().getContentTypeName();
-                    }
+                for (AttractionResponse2 attr : attractions) {
+                    // DTO에서 데이터 추출
+                    String title = attr.getTitle();
+                    String addr = (attr.getAddress() != null) ? attr.getAddress() : "주소 미상";
+                    String category = (attr.getContentTypeName() != null) ? attr.getContentTypeName() : "관광지";
+                    String overview = (attr.getOverview() != null) ? attr.getOverview() : "";
 
-                    String address = attr.getAddr1();
-                    if (address == null) address = "";
-
-                    // 🥪 [샌드위치 기법] 주소 재강조 (위치: %s)
-                    String rawText = String.format("[%s] %s. %s - %s (위치: %s)",
-                            category,
-                            address,
-                            attr.getTitle(),
-                            attr.getOverview() != null ? attr.getOverview() : "",
-                            address
+                    // 프롬프트 생성 (이전과 동일)
+                    String prompt = String.format(
+                            "데이터 정보 - [명칭: %s, 위치: %s, 유형: %s, 설명: %s]\n\n" +
+                                    "당신은 검색 엔진 최적화를 위한 데이터 태깅 AI입니다.\n" +
+                                    "사용자가 여행이나 나들이 계획을 짤 때 검색할 만한 **'목적'과 '상황'**을 문장으로 추출하세요.\n" +
+                                    "## 1. 위치 기반 문맥: 도심형 vs 목적형 여행지 구분\n" +
+                                    "## 2. 활동 추론: 유형과 명칭을 보고 할 수 있는 행동 서술\n" +
+                                    "## 3. 출력 형식: 3개의 자연어 문장 (지리적 문맥, 핵심 활동, 동반자 및 분위기)",
+                            title, addr, category, overview
                     );
 
-                    String safeText = rawText.length() > 2000 ? rawText.substring(0, 2000) : rawText;
+                    String enrichedText = callChatGpt("검색 최적화 전략가", prompt, 0.3);
+                    String finalSearchText = String.format("명칭: %s. 위치: %s. %s", title, addr, enrichedText);
 
-                    textList.add(safeText);
-                    idList.add(attr.getAttrId().toString());
+                    embedTexts.add(finalSearchText);
+                    // Pinecone ID는 String이어야 함
+                    idList.add(String.valueOf(attr.getAttractionId()));
+
+                    metadataList.add(Map.of(
+                            "attractionId", attr.getAttractionId(),
+                            "title", title,
+                            "text", finalSearchText
+                    ));
                 }
 
-                // API 호출 (배치)
-                List<List<Double>> embeddings = getOpenAiEmbeddingBatch(textList);
-                upsertToPineconeBatch(idList, embeddings, textList);
+                List<List<Double>> vectors = getOpenAiEmbeddingBatch(embedTexts);
+                upsertToPineconeBatch(idList, vectors, metadataList);
 
-                log.info(">> {} 페이지 완료 (ID: {} ~ {})", page, idList.get(0), idList.get(idList.size()-1));
-
-                // [안전 장치] 2초 대기
-                Thread.sleep(2000);
-
+                log.info(">> [Sync] {} 페이지 가공 및 저장 완료 (Offset: {})", page, offset);
+                Thread.sleep(1000); // API 속도 제한 고려
             } catch (Exception e) {
-                log.error("!! {} 페이지 에러: {}", page, e.getMessage());
-                // 에러 나면 10초 쉬고 다음 페이지로 (멈춤 방지)
-                try { Thread.sleep(10000); } catch (InterruptedException ignored) {}
+                log.error("!! [Sync] 에러: {}", e.getMessage());
+                break;
             }
             page++;
         }
-        log.info("=========== 동기화 작업 종료 ===========");
     }
 
     // =================================================================================
-    // [Helper Methods] API 통신 로직
+    // 2. [Chat] RAG 채팅 기능
     // =================================================================================
+    public AiResponse chat(String message) {
+        String refinedQuery = refineQuery(message);
+        log.info("[Chat] 정제된 검색어: {}", refinedQuery);
 
-    private List<Double> getOpenAiEmbedding(String text) {
-        String url = "https://api.openai.com/v1/embeddings";
-        HttpHeaders headers = createHeaders(openAiKey);
+        List<Double> vector = getOpenAiEmbedding(refinedQuery);
+        List<Integer> ids = searchPinecone(vector, 20);
 
-        String safeText = text.length() > 2000 ? text.substring(0, 2000) : text;
-        Map<String, Object> body = Map.of("model", "text-embedding-3-small", "input", safeText);
-        HttpEntity<Map> entity = new HttpEntity<>(body, headers);
+        if (ids.isEmpty()) return new AiResponse("죄송합니다. 관련 장소를 찾지 못했습니다.", new ArrayList<>());
 
-        try {
-            Map response = restTemplate.postForObject(url, entity, Map.class);
-            List<Map> data = (List<Map>) response.get("data");
-            return (List<Double>) data.get(0).get("embedding");
-        } catch (Exception e) {
-            throw new RuntimeException("OpenAI Error: " + e.getMessage());
-        }
+        // [변경] Mapper를 사용하여 ID 리스트로 조회
+        List<AttractionResponse2> candidates = attractionMapper.findAllByIds(ids);
+
+        // 검색 컨텍스트 생성
+        String context = candidates.stream().limit(6)
+                .map(p -> String.format("ID:%d, 제목:%s, 주소:%s, 설명:%s",
+                        p.getAttractionId(), p.getTitle(), p.getAddress(),
+                        (p.getOverview() != null ? p.getOverview().substring(0, Math.min(p.getOverview().length(), 100)) : "설명 없음")))
+                .collect(Collectors.joining("\n\n"));
+
+        String sysMsg = "당신은 한국 여행 가이드입니다. 목록의 정보만 사용하여 답변하세요.\n" +
+                "1. 추천하는 각 장소 이름 옆에 반드시 (ID:번호)를 붙이세요. 예: 불국사 (ID:456)\n" +
+                "2. 본문에는 [ID: 123] 형식을 쓰지 말고 반드시 (ID:123) 형식을 쓰세요.\n" +
+                "3. 답변 마지막 줄에만 [IDS: 123, 456] 형식을 반드시 포함하세요.";
+
+        String userMsg = String.format("[추천 후보 목록]\n%s\n\n질문: %s", context, message);
+        String rawAnswer = callChatGpt(sysMsg, userMsg, 0.5);
+
+        return parseResponse(rawAnswer, candidates);
     }
 
-    private List<List<Double>> getOpenAiEmbeddingBatch(List<String> texts) {
-        String url = "https://api.openai.com/v1/embeddings";
-        HttpHeaders headers = createHeaders(openAiKey);
-
-        Map<String, Object> body = Map.of("model", "text-embedding-3-small", "input", texts);
-        HttpEntity<Map> entity = new HttpEntity<>(body, headers);
-
-        try {
-            Map response = restTemplate.postForObject(url, entity, Map.class);
-            List<Map> data = (List<Map>) response.get("data");
-            return data.stream()
-                    .map(item -> (List<Double>) item.get("embedding"))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("OpenAI Batch Error: {}", e.getMessage());
-            throw new RuntimeException("OpenAI Batch Error");
-        }
+    // =================================================================================
+    // 유틸리티 메서드 (기존과 동일)
+    // =================================================================================
+    private String refineQuery(String msg) {
+        String sys = "검색 의도 분석기입니다. 질문에서 1.지역 2.방문목적 3.환경 키워드를 추출하세요.";
+        return callChatGpt("검색어 정제기", sys + "\n질문: " + msg, 0.1);
     }
 
-    private void upsertToPineconeBatch(List<String> ids, List<List<Double>> vectors, List<String> texts) {
-        String url = pineconeHost + "/vectors/upsert";
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Api-Key", pineconeKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+    private AiResponse parseResponse(String raw, List<AttractionResponse2> candidates) {
+        Set<Integer> selectedIds = new HashSet<>();
 
-        List<Map<String, Object>> vectorsPayload = new ArrayList<>();
-        for (int i = 0; i < ids.size(); i++) {
-            Map<String, Object> metadata = Map.of(
-                    "attractionId", Integer.parseInt(ids.get(i)),
-                    "text", texts.get(i).length() > 1000 ? texts.get(i).substring(0, 1000) : texts.get(i)
-            );
-            vectorsPayload.add(Map.of("id", ids.get(i), "values", vectors.get(i), "metadata", metadata));
+        String aiMessage = raw;
+        if (raw.contains("[IDS:")) {
+            int idx = raw.lastIndexOf("[IDS:");
+            aiMessage = raw.substring(0, idx).trim();
+            try {
+                String idPart = raw.substring(idx + 5).replace("]", "").trim();
+                for (String s : idPart.split(",")) {
+                    selectedIds.add(Integer.parseInt(s.trim()));
+                }
+            } catch (Exception e) {
+                log.warn("IDS 태그 파싱 에러");
+            }
         }
 
-        Map<String, Object> request = Map.of("vectors", vectorsPayload);
-        HttpEntity<Map> entity = new HttpEntity<>(request, headers);
-
-        try {
-            restTemplate.postForEntity(url, entity, String.class);
-        } catch (Exception e) {
-            log.error("Pinecone Upsert Error: {}", e.getMessage());
-            throw new RuntimeException("Pinecone Upsert Error");
+        Pattern idPattern = Pattern.compile("\\(ID:(\\d+)\\)");
+        Matcher matcher = idPattern.matcher(aiMessage);
+        while (matcher.find()) {
+            selectedIds.add(Integer.parseInt(matcher.group(1)));
         }
+
+        aiMessage = matcher.replaceAll("").replaceAll("\\s{2,}", " ").trim();
+
+        // DTO 리스트에서 필터링
+        List<AiResponse.PlaceInfo> places = candidates.stream()
+                .filter(c -> selectedIds.contains(c.getAttractionId()))
+                .map(c -> new AiResponse.PlaceInfo(
+                        c.getAttractionId(), // PlaceInfo가 Long을 쓴다면 변환
+                        c.getTitle(),
+                        c.getAddress(),
+                        c.getImageUrl()))
+                .collect(Collectors.toList());
+
+        return new AiResponse(aiMessage, places);
     }
 
-    private String callChatGpt(String systemMsg, String userMsg) {
+    private String callChatGpt(String role, String content, double temp) {
         String url = "https://api.openai.com/v1/chat/completions";
-        HttpHeaders headers = createHeaders(openAiKey);
-        List<Map<String, String>> messages = List.of(
-                Map.of("role", "system", "content", systemMsg),
-                Map.of("role", "user", "content", userMsg));
-        Map<String, Object> body = Map.of("model", "gpt-3.5-turbo", "messages", messages, "temperature", 0.7);
-        HttpEntity<Map> entity = new HttpEntity<>(body, headers);
+        Map<String, Object> body = Map.of(
+                "model", "gpt-3.5-turbo",
+                "messages", List.of(
+                        Map.of("role", "system", "content", role),
+                        Map.of("role", "user", "content", content)
+                ),
+                "temperature", temp
+        );
 
         try {
-            Map response = restTemplate.postForObject(url, entity, Map.class);
-            List<Map> choices = (List<Map>) response.get("choices");
-            Map message = (Map) choices.get(0).get("message");
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, createHeaders(openAiKey)), Map.class);
+            Map respBody = response.getBody();
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) respBody.get("choices");
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
             return (String) message.get("content");
         } catch (Exception e) {
-            return "AI Error";
+            log.error("GPT 호출 실패: {}", e.getMessage());
+            return "오류 발생";
         }
+    }
+
+    // Embedding 및 Pinecone 관련 메서드들 (기존 코드 그대로 유지)
+    private List<List<Double>> getOpenAiEmbeddingBatch(List<String> texts) {
+        String url = "https://api.openai.com/v1/embeddings";
+        Map<String, Object> body = Map.of("model", "text-embedding-3-small", "input", texts);
+        Map resp = restTemplate.postForObject(url, new HttpEntity<>(body, createHeaders(openAiKey)), Map.class);
+        List<Map<String, Object>> data = (List<Map<String, Object>>) resp.get("data");
+        return data.stream().map(d -> (List<Double>) d.get("embedding")).collect(Collectors.toList());
+    }
+
+    private List<Double> getOpenAiEmbedding(String text) { return getOpenAiEmbeddingBatch(List.of(text)).get(0); }
+
+    private void upsertToPineconeBatch(List<String> ids, List<List<Double>> vectors, List<Map<String, Object>> metas) {
+        String url = pineconeHost + "/vectors/upsert";
+        List<Map<String, Object>> payload = new ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            payload.add(Map.of("id", ids.get(i), "values", vectors.get(i), "metadata", metas.get(i)));
+        }
+        restTemplate.postForEntity(url, new HttpEntity<>(Map.of("vectors", payload), createPineconeHeaders()), String.class);
     }
 
     private List<Integer> searchPinecone(List<Double> vector, int topK) {
         String url = pineconeHost + "/query";
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Api-Key", pineconeKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        Map<String, Object> request = Map.of("vector", vector, "topK", topK, "includeMetadata", true);
-        HttpEntity<Map> entity = new HttpEntity<>(request, headers);
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-            if (response.getBody() == null || !response.getBody().containsKey("matches")) return new ArrayList<>();
-            List<Map> matches = (List<Map>) response.getBody().get("matches");
-            return matches.stream().map(m -> Integer.parseInt(((Map) m.get("metadata")).get("attractionId").toString())).collect(Collectors.toList());
-        } catch (Exception e) { return new ArrayList<>(); }
+        Map<String, Object> body = Map.of("vector", vector, "topK", topK, "includeMetadata", true);
+        ResponseEntity<Map> resp = restTemplate.postForEntity(url, new HttpEntity<>(body, createPineconeHeaders()), Map.class);
+        List<Map<String, Object>> matches = (List<Map<String, Object>>) resp.getBody().get("matches");
+        return matches.stream()
+                .map(m -> {
+                    Map<String, Object> metadata = (Map<String, Object>) m.get("metadata");
+                    // Pinecone에서 메타데이터는 숫자여도 Double/String 등으로 올 수 있어 안전하게 파싱
+                    return Integer.parseInt(metadata.get("attractionId").toString());
+                })
+                .collect(Collectors.toList());
     }
 
-    private HttpHeaders createHeaders(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(token);
-        return headers;
+    private HttpHeaders createHeaders(String k) {
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        h.setBearerAuth(k);
+        return h;
+    }
+
+    private HttpHeaders createPineconeHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.set("Api-Key", pineconeKey);
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return h;
     }
 }
