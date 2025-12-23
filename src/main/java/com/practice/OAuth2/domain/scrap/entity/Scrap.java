@@ -56,7 +56,7 @@ public class Scrap extends BaseEntity {
     }
 
     // update Scrap
-    public void updateScrap(String title, String content, String description, String originalLink, String imageUrl) {
+    public void updateScrap(String title, String description, String originalLink, String imageUrl, String content) {
         this.title = title;
         this.description = description;
         this.originalLink = originalLink;
