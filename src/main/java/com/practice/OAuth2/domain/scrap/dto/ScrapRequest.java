@@ -3,7 +3,7 @@ package com.practice.OAuth2.domain.scrap.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-public class ScrapReqest {
+public class ScrapRequest {
 
     // scrap folder 만들기
     @Getter
