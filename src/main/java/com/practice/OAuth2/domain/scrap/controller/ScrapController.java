@@ -2,9 +2,7 @@ package com.practice.OAuth2.domain.scrap.controller;
 
 import com.practice.OAuth2.domain.scrap.dto.LinkMetadataResponse;
 import com.practice.OAuth2.domain.scrap.dto.ScrapFolderResponse;
-import com.practice.OAuth2.domain.scrap.dto.ScrapReqest;
-import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrap;
-import com.practice.OAuth2.domain.scrap.dto.ScrapReqest.CreateScrapFolder;
+import com.practice.OAuth2.domain.scrap.dto.ScrapRequest;
 import com.practice.OAuth2.domain.scrap.dto.ScrapResponse;
 import com.practice.OAuth2.domain.scrap.service.ScrapService;
 import com.practice.OAuth2.domain.scrap.service.UrlMetadataService;
@@ -27,7 +25,7 @@ public class ScrapController {
     // 폴더 생성
     // 주소: POST /api/scrap-folders
     @PostMapping()
-    public ResponseEntity<Long> createScrapFolder(@AuthenticationPrincipal UserPrincipal principal, @RequestBody ScrapReqest.CreateScrapFolder req){
+    public ResponseEntity<Long> createScrapFolder(@AuthenticationPrincipal UserPrincipal principal, @RequestBody ScrapRequest.CreateScrapFolder req){
 
         return ResponseEntity.ok(scrapService.createScrapFolder(principal.getId(), req));
     }
@@ -38,7 +36,7 @@ public class ScrapController {
     public ResponseEntity<Long> createScrap(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long folderId,
-            @RequestBody ScrapReqest.CreateScrap req){
+            @RequestBody ScrapRequest.CreateScrap req){
 
         return ResponseEntity.ok(scrapService.createScrap(principal.getId(), folderId, req));
     }
@@ -65,7 +63,7 @@ public class ScrapController {
     public ResponseEntity<String> updateScrapFolder(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long folderId,
-            @RequestBody ScrapReqest.UpdateScrapFolder req) {
+            @RequestBody ScrapRequest.UpdateScrapFolder req) {
 
 
         scrapService.updateScrapFolder(principal.getId(), folderId, req);
@@ -90,7 +88,7 @@ public class ScrapController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long folderId,
             @PathVariable Long scrapId,
-            @RequestBody ScrapReqest.UpdateScrap req) {
+            @RequestBody ScrapRequest.UpdateScrap req) {
 
         scrapService.updateScrap(principal.getId(), scrapId, req);
         return ResponseEntity.ok("스크랩이 수정되었습니다.");
