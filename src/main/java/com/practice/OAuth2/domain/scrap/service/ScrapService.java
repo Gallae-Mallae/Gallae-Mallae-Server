@@ -58,8 +58,11 @@ public class ScrapService {
                 thumbnailParams = latestScrap.getImageUrl();
             }
 
+            // 스크랩 개수
+            int count = scrapRepository.countByScrapFolder(folder);
+
             // DTO 생성자 호출 (폴더 정보 + 최신 이미지 URL)
-            return new ScrapFolderResponse(folder, thumbnailParams);
+            return new ScrapFolderResponse(folder, thumbnailParams, count);
         }).collect(Collectors.toList());
     }
 
