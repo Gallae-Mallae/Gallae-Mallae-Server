@@ -1,6 +1,8 @@
 package com.practice.OAuth2.domain.scrap.service;
 
 import com.practice.OAuth2.domain.scrap.dto.LinkMetadataResponse;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,6 +15,16 @@ import java.io.IOException;
 public class UrlMetadataService {
 
     public LinkMetadataResponse extractMetadata(String url) {
+        // 유튜브 인지 확인
+        if (isYouTubeUrl(url)) {
+            String videoId = extractYouTubeVideoId(url);
+            if (videoId != null) {
+                // 유튜브 공식 썸네일 주소 조합
+                String imageUrl = "https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg";
+                String title = "YouTube Video"; // 유튜브는 접속 안 하면 제목을 알 수 없으므로 기본값
+                return new LinkMetadataResponse(title, url, imageUrl, "YouTube Video");
+            }
+        }
         try {
             // 1. 해당 URL의 HTML 문서를 가져옴 (타임아웃 5초 설정)
             Document doc = Jsoup.connect(url)
@@ -57,7 +69,7 @@ public class UrlMetadataService {
         } catch (IOException e) {
             // ("URL 파싱 실패: {}", url, e);
             // 실패 시 기본값 혹은 예외 처리
-            return new LinkMetadataResponse("제목 없음", url, "[https://default-image.url](https://default-image.url)", "정보를 가져올 수 없습니다.");
+            return new LinkMetadataResponse("제목 없음", url, "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/scrapdefault.png", "정보를 가져올 수 없습니다.");
         }
     }
 
@@ -71,6 +83,21 @@ public class UrlMetadataService {
             // 2. name="key" 검색 (예: <meta name="twitter:image">)
             element = doc.select("meta[name=" + key + "]").first();
             if (element != null) return element.attr("content");
+        }
+        return null;
+    }
+
+    // 유튜브 URL 패턴 정규식
+    private boolean isYouTubeUrl(String url) {
+        return url.contains("youtube.com") || url.contains("youtu.be");
+    }
+
+    private String extractYouTubeVideoId(String url) {
+        String pattern = "(?<=watch\\?v=|/videos/|embed\\/|youtu.be\\/|\\/v\\/|\\/e\\/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\\u200C\\u200B2F|youtu.be%2F|%2Fv%2F)[^#\\&\\?\\n]*";
+        Pattern compiledPattern = Pattern.compile(pattern);
+        Matcher matcher = compiledPattern.matcher(url);
+        if (matcher.find()) {
+            return matcher.group();
         }
         return null;
     }

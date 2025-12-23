@@ -25,6 +25,9 @@ public class ScrapService {
     private final UserRepository userRepository;
     private final UrlMetadataService urlMetadataService;
 
+    private static final String DEFAULT_SCRAP_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/scrapdefault.png";
+    private static final String INSTAGRAM_LOGO_IMAGE = "https://gm-public-bucket.s3.ap-northeast-2.amazonaws.com/Instagram_icon.png";
+
     // 스크랩 폴더 생성
     public Long createScrapFolder(Long userId, ScrapRequest.CreateScrapFolder req){
         User user = userRepository.findById(userId)
@@ -95,23 +98,49 @@ public class ScrapService {
 
         String imageUrl = req.getImageUrl();
         String content = req.getContent(); // OGP 설명
+        String originalLink = req.getOriginalLink();
 
-        if ((imageUrl == null || imageUrl.isEmpty()) && req.getOriginalLink() != null) {
-            try {
-                LinkMetadataResponse metadata = urlMetadataService.extractMetadata(req.getOriginalLink());
-                imageUrl = metadata.getImageUrl();
-                content = metadata.getDescription(); // 설명도 없으면 채워줌
-            } catch (Exception e) {
-                // 스크래핑 실패해도 스크랩 생성은 되어야 한다
-                // log.warn("Auto-scraping failed: {}", e.getMessage());
+        // 이미지가 비어있고 링크가 있는 경우에만 처리 로직 수행
+        if ((imageUrl == null || imageUrl.isEmpty()) && originalLink != null) {
+
+            // Case 1: 인스타그램 링크인 경우 (스크래핑 시도 X, 바로 로고 적용)
+            if (originalLink.contains("instagram.com")) {
+                imageUrl = INSTAGRAM_LOGO_IMAGE;
+                if (content == null) content = "Instagram Link";
             }
+            // Case 2: 일반 링크 (스크래핑 시도)
+            else {
+                try {
+                    LinkMetadataResponse metadata = urlMetadataService.extractMetadata(originalLink);
+
+                    // 스크래핑 결과가 있으면 적용
+                    if (metadata.getImageUrl() != null && !metadata.getImageUrl().isEmpty()) {
+                        imageUrl = metadata.getImageUrl();
+                    } else {
+                        // 스크래핑은 됐는데 이미지가 없는 경우 -> 기본 이미지
+                        imageUrl = DEFAULT_SCRAP_IMAGE;
+                    }
+
+                    if (content == null || content.isEmpty()) {
+                        content = metadata.getDescription();
+                    }
+                } catch (Exception e) {
+                    // 스크래핑 실패 시 -> 기본 이미지
+                    // log.warn("Scraping failed for url: {}", originalLink);
+                    imageUrl = DEFAULT_SCRAP_IMAGE;
+                }
+            }
+        }
+
+        if ((imageUrl == null || imageUrl.isEmpty()) ) {
+            imageUrl = DEFAULT_SCRAP_IMAGE;
         }
 
         Scrap scrap = Scrap.builder()
                 .scrapFolder(folder)
                 .title(req.getTitle())
                 .description(req.getDescription())
-                .originalLink(req.getOriginalLink())
+                .originalLink(originalLink)
                 .imageUrl(imageUrl)
                 .content(content)
                 .build();
