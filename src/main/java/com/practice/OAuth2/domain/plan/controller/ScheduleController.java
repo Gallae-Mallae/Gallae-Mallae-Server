@@ -3,6 +3,7 @@ package com.practice.OAuth2.domain.plan.controller;
 import com.practice.OAuth2.domain.plan.dto.ScheduleBlockResponse;
 import com.practice.OAuth2.domain.plan.dto.ScheduleCreateRequest;
 import com.practice.OAuth2.domain.plan.dto.ScheduleMoveRequest;
+import com.practice.OAuth2.domain.plan.dto.ScheduleResizeRequest;
 import com.practice.OAuth2.domain.plan.service.ScheduleService;
 import com.practice.OAuth2.domain.user.entity.User;
 import com.practice.OAuth2.domain.user.repository.UserRepository;
@@ -58,9 +59,10 @@ public class ScheduleController {
     // 스케줄 블록 시간 늘리기
     @PatchMapping("/{blockId}/resize")
     public ResponseEntity<Void> resizeBlock(
-            @PathVariable Long blockId
+            @PathVariable Long blockId,
+            @RequestBody ScheduleResizeRequest request
     ) {
-        scheduleService.resizeScheduleBlock(blockId);
+        scheduleService.resizeScheduleBlock(blockId, request.getNewEndTime());
         return ResponseEntity.ok().build();
     }
 
