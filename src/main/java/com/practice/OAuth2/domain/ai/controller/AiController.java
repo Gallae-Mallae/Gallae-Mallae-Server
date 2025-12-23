@@ -16,7 +16,7 @@ public class AiController {
     // 1. 데이터 동기화 (관리자용)
     @PostMapping("/sync")
     public ResponseEntity<String> sync() {
-        aiService.syncMysqlToPinecone(98);
+        aiService.syncMysqlToPinecone(228);
         return ResponseEntity.ok("동기화 시작됨");
     }
 

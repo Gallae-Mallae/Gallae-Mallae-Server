@@ -31,7 +31,7 @@ public class AiService {
     private String pineconeHost;
 
     // =================================================================================
-    // 1. [Sync] MySQL -> Pinecone
+    // 1. [Sync] MySQL -> Pinecone (사용자님 원본 코드 100% 유지)
     // =================================================================================
     public void syncMysqlToPinecone(int startPage) {
         int page = startPage;
@@ -55,7 +55,6 @@ public class AiService {
                 for (AttractionResponse2 attr : attractions) {
                     String title = attr.getTitle();
                     if (shouldSkipData(title)) {
-                        log.info(">> [Skip] 제외된 데이터: {}", title);
                         continue;
                     }
 
@@ -121,211 +120,165 @@ public class AiService {
                 t.contains("주민센터") || t.contains("보건소") || t.contains("행정복지센터");
     }
 
-    // =================================================================================
-    // 2. [Chat] RAG 채팅 (키워드 필터 + Top-K 셔플 + 정직한 응답)
-    // =================================================================================
-    public AiResponse chat(String message) {
-        // 1. 의도 분석
-        SearchIntent intent = analyzeUserIntent(message);
-        log.info(">>> [Chat] 분석 - Region: {}, Query: {}", intent.region, intent.query);
-
-        List<Double> vector = getOpenAiEmbedding(intent.query);
-
-        // 2. [1차 검색] Pinecone (유사도 순 100개)
-        List<Integer> ids = searchPinecone(vector, 100, intent.region);
-
-        if (ids.isEmpty()) {
-            log.info(">>> [Chat] 필터 결과 없음. 전국 재검색.");
-            ids = searchPinecone(vector, 50, null);
-        }
-
-        if (ids.isEmpty()) return new AiResponse("조건에 맞는 장소를 찾지 못했습니다.", new ArrayList<>());
-
-        // 3. DB 조회
-        List<AttractionResponse2> candidates = attractionMapper.findAllByIds(ids);
-
-        // 4. [주소 필터링]
-        List<AttractionResponse2> addressFiltered = filterByAddressKeyword(candidates, message);
-        if (addressFiltered.isEmpty()) {
-            log.warn("!!! [Chat] 주소 매칭 실패. 원본 후보군 사용.");
-            addressFiltered = candidates;
-        }
-
-        // =========================================================================
-        // 🔥 [Step 1] Pinecone 랭킹(정확도) 순서 복구
-        // =========================================================================
-        List<AttractionResponse2> sortedPool = new ArrayList<>();
-        Map<Integer, AttractionResponse2> candidateMap = addressFiltered.stream()
-                .collect(Collectors.toMap(AttractionResponse2::getAttractionId, item -> item, (a, b) -> a));
-
-        for (Integer id : ids) {
-            if (candidateMap.containsKey(id)) {
-                sortedPool.add(candidateMap.get(id));
-            }
-        }
-
-        // =========================================================================
-        // 🔥 [Step 2] 강력한 키워드 필터 ("사우나" 없으면 삭제) -> 없으면 바로 종료!
-        // =========================================================================
-        List<AttractionResponse2> keywordFiltered = filterByRelevance(sortedPool, intent.query);
-
-        if (keywordFiltered.isEmpty()) {
-            // 여기가 핵심입니다. 없으면 억지로 유사도 결과(sortedPool)를 쓰지 않고 끝냅니다.
-            log.info(">>> [Chat] '{}' 키워드 포함 장소 0개. 빈 결과 반환.", intent.query);
-            return new AiResponse("죄송합니다. 요청하신 '" + intent.query + "' 관련 장소 정보를 찾을 수 없습니다.", new ArrayList<>());
-        }
-
-        // =========================================================================
-        // 🔥 [Step 3] Top-K 셔플 (상위 10개만 뽑아서 섞음 -> 다양성 확보)
-        // =========================================================================
-        List<AttractionResponse2> topTier = keywordFiltered.stream()
-                .limit(10) // 1티어 10개 추출
-                .collect(Collectors.toList());
-
-        if (!topTier.isEmpty()) {
-            Collections.shuffle(topTier); // 1티어 내에서 순서 섞기
-        }
-
-        // 최종 3개 선택 (데이터가 1개면 1개만 선택됨)
-        List<AttractionResponse2> selected = topTier.stream()
-                .limit(3)
-                .collect(Collectors.toList());
-
-        String context = selected.stream()
-                .map(p -> String.format("(ID:%d) %s - %s : %s",
-                        p.getAttractionId(), p.getTitle(), p.getAddress(),
-                        (p.getOverview() != null ? p.getOverview().substring(0, Math.min(p.getOverview().length(), 100)) : "")))
-                .collect(Collectors.joining("\n\n"));
-
-        // =========================================================================
-        // 🔥 [프롬프트 수정] "3개 강요" 삭제 -> "있는 만큼만 추천해"
-        // =========================================================================
-        String sysMsg = "당신은 정직한 한국 여행 가이드입니다. 아래 [추천 후보 목록]을 기반으로 답변하세요.\n" +
-                "1. **후보 목록에 있는 장소만 추천하세요.** (목록이 1개면 1개만, 3개면 3개만 추천)\n" +
-                "2. **절대 없는 장소를 지어내거나, 목록에 없는 장소를 추가하지 마세요.**\n" +
-                "3. 각 장소마다 추천하는 이유를 매력적으로 설명하세요.\n" +
-                "4. 답변 마지막 줄에 [IDS: 1, 2, 3] 형태로 추천한 장소의 ID만 나열하세요.";
-
-        String userMsg = String.format("[추천 후보 목록]\n%s\n\n질문: %s", context, message);
-        String rawAnswer = callChatGpt(sysMsg, userMsg, 0.5);
-
-        return parseResponse(rawAnswer, selected);
-    }
-
-    // =================================================================================
-    // 3. Helper Methods
-    // =================================================================================
-
-    // 🔥 [신규 메서드] 키워드 포함 여부 검사 (제목, 설명에 검색어가 있나?)
-    private List<AttractionResponse2> filterByRelevance(List<AttractionResponse2> list, String query) {
-        if (query == null || query.trim().isEmpty()) return list;
-
-        String[] keywords = query.split("\\s+");
-        List<String> validKeywords = new ArrayList<>();
-        for (String k : keywords) {
-            // "추천", "알려줘" 같은 의미 없는 단어 제외
-            if (k.length() >= 2 && !k.equals("추천") && !k.equals("알려줘")) {
-                validKeywords.add(k);
-            }
-        }
-
-        if (validKeywords.isEmpty()) return list;
-
-        List<AttractionResponse2> result = new ArrayList<>();
-        for (AttractionResponse2 item : list) {
-            boolean isMatch = false;
-            String totalText = (item.getTitle() + " " + item.getContentTypeName() + " " + item.getOverview());
-
-            // 검색어가 하나라도 포함되면 통과 (제목이나 설명에 '사우나'가 있어야 함)
-            for (String key : validKeywords) {
-                if (totalText.contains(key)) {
-                    isMatch = true;
-                    break;
-                }
-            }
-            if (isMatch) result.add(item);
-        }
-
-        log.info(">>> [키워드 필터] 입력 {}개 -> 출력 {}개 (키워드: {})", list.size(), result.size(), validKeywords);
-        return result;
-    }
-
-    private static class SearchIntent {
-        String region;
-        String query;
-        public SearchIntent(String region, String query) {
-            this.region = region;
-            this.query = query;
-        }
-    }
-
     private String parseRegionStandard(String address) {
         if (address == null || address.trim().isEmpty()) return "기타";
         String trimmed = address.trim();
         return (trimmed.length() >= 2) ? trimmed.substring(0, 2) : trimmed;
     }
 
-    private SearchIntent analyzeUserIntent(String message) {
-        String prompt = "당신은 한국 지리 전문가입니다.\n" +
-                "사용자의 질문을 분석하여 다음 두 가지를 추출하세요.\n\n" +
-                "1. **지역(Region)**: 질문에 포함된 지명(동, 구, 랜드마크 등)이 속한 **'광역자치단체'의 앞 두 글자**를 추출하세요.\n" +
-                "   **[필수] 당신의 지리적 지식을 활용하여, 예시에 없더라도 정확한 광역단체를 찾아내세요.**\n" +
-                "   [매핑 예시]\n" +
-                "   - 서울, 강남, 홍대 -> '서울'\n" +
-                "   - 경기, 가평, 판교 -> '경기'\n" +
-                "   - 인천, 송도 -> '인천'\n" +
-                "   - 강원, 춘천, 속초 -> '강원'\n" +
-                "   - 부산, 해운대, 서면 -> '부산'\n" +
-                "   - 대구, 동성로 -> '대구', 대전 -> '대전', 광주 -> '광주', 울산 -> '울산', 세종 -> '세종'\n" +
-                "   - 제주, 애월 -> '제주'\n" +
-                "   - 충청(천안/청주 등) -> '충청', 전라(전주/여수 등) -> '전라', 경상(경주/포항 등) -> '경상'\n" +
-                "   - 지역 언급 없음 -> 'NONE'\n" +
-                "2. **검색어(Query)**: 세부 지명을 **포함한** 자연어 검색 문장\n\n" +
-                "입력: " + message + "\n" +
-                "출력: Region: [2글자지역명] | Query: [검색어]";
+    // =================================================================================
+    // 2. [Chat] RAG 채팅 (NEW: 검색 -> LLM 심판 -> 지도 분기)
+    // =================================================================================
+    public AiResponse chat(String message) {
+        // 1. 의도 분석
+        SearchIntent intent = analyzeUserIntent(message);
+        log.info(">>> [Chat] 분석 결과 - Region: [{}], Query: [{}]", intent.region, intent.query);
 
-        String result = callChatGpt("검색 분석기", prompt, 0.0);
+        // 2. 임베딩 및 Pinecone 검색 (일단 5개 후보 추출)
+        List<Double> vector = getOpenAiEmbedding(intent.query);
+        List<ScoredItem> scoredItems = searchPineconeWithScore(vector, 5, intent.region);
+
+        if (scoredItems.isEmpty()) {
+            log.info(">>> [Chat] 1차 검색 실패 -> 지도 검색 유도");
+            return createMapSearchResponse(intent.query);
+        }
+
+        // 3. DB에서 후보군 상세 정보 조회
+        List<Integer> candidateIds = scoredItems.stream().map(i -> i.id).collect(Collectors.toList());
+        List<AttractionResponse2> candidates = attractionMapper.findAllByIds(candidateIds);
+
+        // 4. [핵심] LLM 심판 (Judge): 과연 이 장소들이 질문과 맞는가?
+        // 여기서 "부산" 물어봤는데 "송파" 나오면 다 걸러짐.
+        List<Integer> verifiedIds = verifyCandidatesWithGpt(message, candidates);
+
+        // 5. 결과 분기 처리
+        if (verifiedIds.isEmpty()) {
+            // 검증 결과 쓸만한 게 하나도 없다 -> 지도 검색으로 짬때리기
+            log.info(">>> [Chat] LLM 검증 결과 적합한 장소 없음 -> 지도 검색 유도");
+            return createMapSearchResponse(message);
+        }
+
+        // 6. 검증 통과한 장소로 최종 답변 생성
+        List<AttractionResponse2> finalPlaces = candidates.stream()
+                .filter(c -> verifiedIds.contains(c.getAttractionId()))
+                .limit(3) // 최대 3개
+                .collect(Collectors.toList());
+
+        return generateFinalRecommendation(message, finalPlaces);
+    }
+
+    // =================================================================================
+    // [Chat Helpers] 검증, 지도생성, 최종답변 (새로 추가됨)
+    // =================================================================================
+
+    // LLM 심판 로직
+    private List<Integer> verifyCandidatesWithGpt(String userMessage, List<AttractionResponse2> candidates) {
+        if (candidates.isEmpty()) return Collections.emptyList();
+
+        StringBuilder candidatesText = new StringBuilder();
+        for (AttractionResponse2 attr : candidates) {
+            candidatesText.append(String.format("- [ID:%d] 명칭: %s, 주소: %s, 설명: %s\n",
+                    attr.getAttractionId(), attr.getTitle(), attr.getAddress(),
+                    (attr.getOverview() != null && attr.getOverview().length() > 50) ? attr.getOverview().substring(0, 50) : ""));
+        }
+
+        String systemPrompt = "당신은 엄격한 '검색 결과 검증관'입니다.\n" +
+                "사용자의 질문과 검색된 장소 후보들을 비교하여, 질문의 의도(특히 '지역'과 '장소 유형')에 정확히 부합하는 장소만 골라내세요.\n" +
+                "1. 사용자가 특정 지역(예: 부산 동래구)을 원했는데 다른 지역(예: 서울 송파구)이 나오면 과감히 탈락시키세요.\n" +
+                "2. 적합한 장소가 있다면 그 장소의 ID만 JSON 리스트로 반환하세요. (예: [123, 456])\n" +
+                "3. 적합한 장소가 하나도 없다면 빈 리스트 '[]'를 반환하세요.\n" +
+                "4. 오직 숫자 리스트만 반환하세요.";
+
+        String userPrompt = String.format("사용자 질문: \"%s\"\n\n검색 후보군:\n%s", userMessage, candidatesText.toString());
+
+        String result = callChatGpt("검색 검증관", systemPrompt + "\n" + userPrompt, 0.0);
+
+        try {
+            Pattern pattern = Pattern.compile("\\[.*?\\]");
+            Matcher matcher = pattern.matcher(result);
+            if (matcher.find()) {
+                String jsonContent = matcher.group();
+                if (jsonContent.equals("[]")) return Collections.emptyList();
+                String cleanContent = jsonContent.replace("[", "").replace("]", "");
+                return Arrays.stream(cleanContent.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Integer::parseInt)
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            log.error("검증 결과 파싱 실패: {}", result);
+        }
+        return Collections.emptyList();
+    }
+
+    // 지도 검색 유도 응답
+    private AiResponse createMapSearchResponse(String query) {
+        String searchUrl = "https://map.naver.com/p/search/" + query.replace(" ", "%20");
+        String message = String.format("죄송합니다. 제가 가진 데이터에는 조건에 딱 맞는 장소가 없네요.\n" +
+                "대신 실시간 지도로 확인해보시겠어요? 아래 링크를 클릭해주세요.\n\n" +
+                "[지도에서 '%s' 검색하기](%s)", query, searchUrl);
+
+        return new AiResponse(message, new ArrayList<>());
+    }
+
+    // 최종 추천 멘트 생성
+    private AiResponse generateFinalRecommendation(String message, List<AttractionResponse2> selected) {
+        String context = selected.stream()
+                .map(p -> String.format("- %s (위치: %s): %s",
+                        p.getTitle(), p.getAddress(),
+                        (p.getOverview() != null ? p.getOverview().substring(0, Math.min(p.getOverview().length(), 100)) : "")))
+                .collect(Collectors.joining("\n\n"));
+
+        String sysMsg = "당신은 여행 가이드입니다. 아래 선별된 장소들에 대해 사용자에게 매력적으로 추천해주세요. 없는 내용은 지어내지 마세요.";
+        String userMsg = String.format("질문: %s\n\n선별된 장소 정보:\n%s", message, context);
+
+        String answer = callChatGpt(sysMsg, userMsg, 0.7);
+
+        List<AiResponse.PlaceInfo> places = selected.stream()
+                .map(c -> new AiResponse.PlaceInfo(
+                        c.getAttractionId(),
+                        c.getTitle(),
+                        c.getAddress(),
+                        c.getImageUrl()
+                ))
+                .collect(Collectors.toList());
+
+        return new AiResponse(answer, places);
+    }
+
+    // =================================================================================
+    // [Common Helpers] 의도 분석, Pinecone, GPT, Embedding (공통 사용)
+    // =================================================================================
+
+    // 의도 분석기 (지역 필터링을 위해 유지)
+    private SearchIntent analyzeUserIntent(String message) {
+        String prompt = "사용자의 입력에서 'Region(광역자치단체 표준명)'과 'Query(상세 검색어)'를 추출하세요.\n" +
+                "- Region 예: '송파구'->'서울', '해운대'->'부산'. 없으면 'NONE'.\n" +
+                "- Query: 광역명 제외, 구체적 지명 및 목적 유지.\n" +
+                "출력형식: Region: [지역] | Query: [검색어]";
+
+        String result = callChatGpt("검색 의도 분석기", prompt + "\n입력: " + message, 0.0);
+
         try {
             String[] parts = result.split("\\|");
             String regionPart = parts[0].replace("Region:", "").trim();
-            String queryPart = parts.length > 1 ? parts[1].replace("Query:", "").trim() : message;
             if ("NONE".equalsIgnoreCase(regionPart)) regionPart = null;
+            String queryPart = parts.length > 1 ? parts[1].replace("Query:", "").trim() : message;
             return new SearchIntent(regionPart, queryPart);
         } catch (Exception e) {
             return new SearchIntent(null, message);
         }
     }
 
-    private List<AttractionResponse2> filterByAddressKeyword(List<AttractionResponse2> candidates, String userMessage) {
-        String targetLocation = null;
-        for (AttractionResponse2 attr : candidates) {
-            if (attr.getAddress() == null) continue;
-            String[] tokens = attr.getAddress().split(" ");
-            for (String token : tokens) {
-                if (token.length() >= 2 && (token.endsWith("구") || token.endsWith("군") || token.endsWith("시"))) {
-                    String core = token.substring(0, token.length() - 1);
-                    if (userMessage.contains(core)) {
-                        targetLocation = core;
-                        break;
-                    }
-                }
-            }
-            if (targetLocation != null) break;
-        }
+    private static class SearchIntent { String region; String query; public SearchIntent(String region, String query) { this.region = region; this.query = query; } }
 
-        if (targetLocation == null) return candidates;
-
-        log.info(">>> [2차 필터] '{}' 포함 주소만 필터링.", targetLocation);
-        List<AttractionResponse2> filtered = new ArrayList<>();
-        for (AttractionResponse2 attr : candidates) {
-            if (attr.getAddress() != null && attr.getAddress().contains(targetLocation)) {
-                filtered.add(attr);
-            }
-        }
-        return filtered;
+    private static class ScoredItem {
+        int id; double score;
+        public ScoredItem(int id, double score) { this.id = id; this.score = score; }
     }
 
-    private List<Integer> searchPinecone(List<Double> vector, int topK, String filterRegion) {
+    private List<ScoredItem> searchPineconeWithScore(List<Double> vector, int topK, String filterRegion) {
         String url = pineconeHost + "/query";
         Map<String, Object> body = new HashMap<>();
         body.put("vector", vector);
@@ -341,9 +294,11 @@ public class AiService {
             List<Map<String, Object>> matches = (List<Map<String, Object>>) resp.getBody().get("matches");
             return matches.stream()
                     .map(m -> {
-                        Map<String, Object> metadata = (Map<String, Object>) m.get("metadata");
-                        return Integer.parseInt(metadata.get("attractionId").toString());
+                        int id = Integer.parseInt(((Map) m.get("metadata")).get("attractionId").toString());
+                        double score = Double.parseDouble(m.get("score").toString());
+                        return new ScoredItem(id, score);
                     })
+                    .sorted((a, b) -> Double.compare(b.score, a.score))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Pinecone 오류: {}", e.getMessage());
@@ -351,45 +306,41 @@ public class AiService {
         }
     }
 
-    // =================================================================================
-    // 4. API Utils
-    // =================================================================================
-
-    private AiResponse parseResponse(String raw, List<AttractionResponse2> candidates) {
-        Set<Integer> selectedIds = new HashSet<>();
-        String aiMessage = raw;
-        if (raw.contains("[IDS:")) {
-            int idx = raw.lastIndexOf("[IDS:");
-            aiMessage = raw.substring(0, idx).trim();
-            try {
-                String idPart = raw.substring(idx + 5).replace("]", "").trim();
-                for (String s : idPart.split(",")) { if(!s.trim().isEmpty()) selectedIds.add(Integer.parseInt(s.trim())); }
-            } catch (Exception e) {}
-        }
-        Pattern idPattern = Pattern.compile("\\(ID:(\\d+)\\)");
-        Matcher matcher = idPattern.matcher(aiMessage);
-        while (matcher.find()) selectedIds.add(Integer.parseInt(matcher.group(1)));
-        aiMessage = matcher.replaceAll("").replaceAll("\\s{2,}", " ").trim();
-
-        List<AiResponse.PlaceInfo> places = candidates.stream()
-                .filter(c -> selectedIds.contains(c.getAttractionId()))
-                .map(c -> new AiResponse.PlaceInfo(c.getAttractionId(), c.getTitle(), c.getAddress(), c.getImageUrl()))
-                .collect(Collectors.toList());
-        return new AiResponse(aiMessage, places);
-    }
-
     private String callChatGpt(String role, String content, double temp) {
+        // user content 부분만 role 없이 string으로 들어오는 경우와, system prompt가 분리된 경우 처리
+        // 위에서 호출할 때 callChatGpt(sysMsg, userMsg, temp) 형태로 호출하는 로직이 있는데
+        // 현재 메서드 시그니처는 callChatGpt(String role, String content, double temp) 임.
+        // 이를 맞추기 위해 내부에서 role을 system message로 간주하고 처리.
+
         String url = "https://api.openai.com/v1/chat/completions";
+
+        // role 변수에 System Prompt 전체가 들어오는 경우(analyzeUserIntent 등)와
+        // role="여행지 분석가" 처럼 짧게 들어오는 경우 모두 대응
+        List<Map<String, String>> messages = new ArrayList<>();
+
+        // System Prompt
+        messages.add(Map.of("role", "system", "content", role));
+
+        // User Content (만약 content 안에 "사용자 질문:" 같은게 이미 포함되어 있으면 그대로 전송)
+        messages.add(Map.of("role", "user", "content", content));
+
         Map<String, Object> body = Map.of(
                 "model", "gpt-3.5-turbo",
-                "messages", List.of(Map.of("role", "system", "content", role), Map.of("role", "user", "content", content)),
+                "messages", messages,
                 "temperature", temp
         );
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, createHeaders(openAiKey)), Map.class);
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) ((Map) response.getBody()).get("choices");
-            return (String) ((Map) choices.get(0).get("message")).get("content");
-        } catch (Exception e) { return "오류 발생"; }
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody == null) return "";
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+            if (choices == null || choices.isEmpty()) return "";
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            return (String) message.get("content");
+        } catch (Exception e) {
+            log.error("GPT 호출 실패: {}", e.getMessage());
+            return "오류 발생";
+        }
     }
 
     private List<List<Double>> getOpenAiEmbeddingBatch(List<String> texts) {
