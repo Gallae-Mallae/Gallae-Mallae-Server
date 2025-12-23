@@ -124,11 +124,10 @@ public class ScheduleService {
     }
 
     // 블럭 크기 조절
-    public void resizeScheduleBlock(Long blockId) {
+    public void resizeScheduleBlock(Long blockId, LocalTime newEndTime) {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
-        // [STOMP] 변경된 정보 전송 (Type: UPDATE)
         Long planId = block.getPlan().getPlanId();
 
         String lockKey = LOCK_PREFIX + planId;
@@ -137,10 +136,7 @@ public class ScheduleService {
         }
 
         try{
-            LocalTime currentEndTime = block.getEndTime();
-            LocalTime newEndTime = currentEndTime.plusMinutes(30);
-
-            // 시간 업데이트 (엔티티 내부에 updateEndTime 메서드 필요)
+            // 프론트엔드에서 계산된 newEndTime 적용
             block.updateEndTime(newEndTime);
 
             ScheduleBlockResponse response = new ScheduleBlockResponse(block);
@@ -210,14 +206,7 @@ public class ScheduleService {
         }
     }
 
-    /**
-     * STOMP 메시지 전송 공통 메서드
-     * 구독 주소: /topic/plans/{planId}
-     * 메시지 구조:
-     * { "event": "이벤트명",
-     * "data": { ... }
-     * }
-     */
+    // STOMP 메시지 전송 공통 메서드
     private void sendStompMessage(Long planId, String eventType, Object data) {
         Map<String, Object> message = new HashMap<>();
         message.put("event", eventType);
