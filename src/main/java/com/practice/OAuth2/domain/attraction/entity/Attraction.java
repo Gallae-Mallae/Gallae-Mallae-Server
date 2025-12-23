@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -29,15 +28,8 @@ public class Attraction extends BaseEntity {
     @JoinColumn(name = "sido_code", referencedColumnName = "sido_code")
     private Sido sido;
 
-
-    @Column(name = "gugun_code")
-    private Integer gugunCode;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumns({
-            @JoinColumn(name = "gugun_code", referencedColumnName = "gugun_code", insertable = false, updatable = false),
-            @JoinColumn(name = "sido_code", referencedColumnName = "sido_code", insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "gugun_code", referencedColumnName = "gugun_code")
     private Gugun gugun;
 
     @ManyToOne(fetch = FetchType.LAZY)
