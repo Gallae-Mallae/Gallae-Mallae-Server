@@ -29,6 +29,7 @@ public class Attraction extends BaseEntity {
     @JoinColumn(name = "sido_code", referencedColumnName = "sido_code")
     private Sido sido;
 
+
     @Column(name = "gugun_code")
     private Integer gugunCode;
 

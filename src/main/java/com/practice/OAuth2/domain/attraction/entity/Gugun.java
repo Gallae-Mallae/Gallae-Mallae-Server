@@ -26,4 +26,5 @@ public class Gugun extends BaseEntity {
 
     @Column(name = "gugun_name", length = 20)
     private String gugunName;
+
 }
