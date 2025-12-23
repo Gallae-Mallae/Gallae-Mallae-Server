@@ -63,6 +63,18 @@ public class MemoService {
         }
     }
 
+    // 특정 블록의 메모 조회
+    @Transactional(readOnly = true)
+    public List<MemoResponse> getMemos(Long blockId){
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
+
+        // 순서대로 조회
+        return memoRepository.findAllByScheduleBlockOrderByOrderIndexAsc(block).stream()
+                .map(MemoResponse::new)
+                .collect(Collectors.toList());
+    }
+
     // 메모 수정
     public void updateMemo(Long memoId, MemoRequest request) {
         Memo memo = memoRepository.findById(memoId)
