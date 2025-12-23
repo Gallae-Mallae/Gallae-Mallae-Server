@@ -38,10 +38,10 @@ public class Scrap extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description; // 사용자가 적는 스크랩에 대한 메모
 
-    @Column(name = "original_link")
+    @Column(name = "original_link", columnDefinition = "TEXT")
     private String originalLink;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
     // 생성자 추가
