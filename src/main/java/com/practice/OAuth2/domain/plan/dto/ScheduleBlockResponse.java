@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class ScheduleBlockResponse {
@@ -18,6 +19,9 @@ public class ScheduleBlockResponse {
     private LocalTime startTime;
     private LocalTime endTime;
     private List<MemoResponse> memos;
+
+    @Setter
+    private Integer fromDay;
 
     public ScheduleBlockResponse(ScheduleBlock block) {
         this.blockId = block.getBlockId();

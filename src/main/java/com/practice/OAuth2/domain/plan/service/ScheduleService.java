@@ -153,6 +153,8 @@ public class ScheduleService {
         ScheduleBlock block = scheduleBlockRepository.findById(blockId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
+        // 이동 전 날짜 저장
+        Integer oldDay = block.getDay();
         Long planId = block.getPlan().getPlanId();
 
         // [Redis Lock] 획득
@@ -167,9 +169,14 @@ public class ScheduleService {
             // 블럭 옮겼을때 바뀐 정보 업데이트
             block.changePosition(newDay, newStartTime);
 
+            // ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+            // 강제로 db에 저장, 원래 트랜잭션 때문에 메서드 끝날때 db에 반영
+            scheduleBlockRepository.saveAndFlush(block);
+
             ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+            response.setFromDay(oldDay); // 이동 전 날짜 추가
+
             // 변경된 블럭 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
-            // "UPDATE"라는 신호와 함께 변경된 블럭 정보를 보냄
             sendStompMessage(planId, "BLOCK_MOVED", response);
         }finally{
             unlock(lockKey);
