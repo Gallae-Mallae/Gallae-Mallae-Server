@@ -24,6 +24,9 @@ public interface AttractionMapper {
 
     //페이지네이션
     List<AttractionResponse2> findSidebarList(AttractionRequest request);
+
+    // 인기 여행지 리스트 (조건 없음, 좋아요 순)
+    List<AttractionResponse2> findPopularAttractions(AttractionRequest request);
 }
 
 

@@ -46,6 +46,14 @@ public class AttractionController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/map/popular")
+    public ResponseEntity<com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse> getPopularAttractions(
+            @ModelAttribute AttractionRequest request
+    ) {
+        var result = attractionService.getPopularAttractions(request);
+        return ResponseEntity.ok(result);
+    }
+
 
 
     // MyBatis 연결 테스트용
