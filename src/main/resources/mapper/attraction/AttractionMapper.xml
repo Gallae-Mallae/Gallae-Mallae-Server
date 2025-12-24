@@ -106,4 +106,26 @@
         LIMIT #{limit}
         OFFSET #{offset}
     </select>
+
+    <select id="findPopularAttractions"
+            parameterType="com.practice.OAuth2.domain.attraction.dto.AttractionRequest"
+            resultType="com.practice.OAuth2.domain.attraction.dto.AttractionResponse2">
+        SELECT
+        attr_id      AS attractionId,
+        1            AS count,
+        latitude     AS latitude,
+        longitude    AS longitude,
+        title        AS title,
+        addr1        AS address,
+        first_image1 AS imageUrl,
+        view_count   AS viewCount,
+        like_count   AS likeCount,
+        content_type_id AS contentTypeId
+        FROM attractions
+
+        ORDER BY like_count DESC, view_count DESC, attr_id DESC
+
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
 </mapper>

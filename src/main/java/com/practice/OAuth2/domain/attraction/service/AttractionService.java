@@ -94,6 +94,24 @@ public class AttractionService {
     }
 
     @Transactional(readOnly = true)
+    public com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse getPopularAttractions(AttractionRequest request) {
+        // 1. DB 조회 (요청 사이즈보다 1개 더 가져오도록 XML에서 설정 - AttractionRequest.getLimit() 확인 필요)
+        // AttractionRequest.getLimit()가 size + 1을 반환하므로 findPopularAttractions 쿼리에서 LIMIT #{limit} 사용시 자동으로 +1개 가져옴
+        List<AttractionResponse2> result = attractionMapper.findPopularAttractions(request);
+
+        // 2. hasNext 판단 로직
+        boolean hasNext = false;
+        if (result.size() > request.getSize()) {
+            hasNext = true;
+            result.remove(result.size() - 1); // 확인용으로 가져온 마지막 1개 제거
+        }
+
+        // 3. 결과 반환
+        return new com.practice.OAuth2.domain.attraction.dto.AttractionSliceResponse(
+                result, hasNext, request.getPage());
+    }
+
+    @Transactional(readOnly = true)
     public AttractionResponse getAttractionDetail(Integer attractionId) {
         Attraction attraction = attractionRepository.findById(attractionId)
                 .orElseThrow(() -> new ResponseStatusException(
