@@ -144,6 +144,19 @@ public class PlanService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public PlanResponse getPlan(Long planId, Long userId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("조회 권한이 없습니다.");
+        }
+
+        return new PlanResponse(plan);
+    }
+
     // 여행 수정 (제목, 기간)
     @Transactional
     public void updatePlan(Long planId, PlanUpdateRequest request) {
@@ -161,6 +174,21 @@ public class PlanService {
         // [STOMP] PLAN_UPDATED 알림 전송
         // 변경된 Plan 정보를 모두에게 발행
         sendStompMessage(planId, "PLAN_UPDATED", new PlanResponse(plan));
+    }
+
+    @Transactional
+    public void deletePlan(Long planId, Long userId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+        }
+
+        planRepository.delete(plan);
+
+        sendStompMessage(planId, "PLAN_DELETED", planId);
     }
 
     private void sendStompMessage(Long planId, String eventType, Object data) {
