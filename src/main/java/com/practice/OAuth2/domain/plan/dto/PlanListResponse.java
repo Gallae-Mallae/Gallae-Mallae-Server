@@ -12,12 +12,14 @@ public class PlanListResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private String planImageUrl;
+    private Integer isShared;
 
-    public PlanListResponse(Plan plan) {
+    public PlanListResponse(Plan plan, int memberCount) {
         this.planId = plan.getPlanId();
         this.title = plan.getTitle();
         this.startDate = plan.getStartDate();
         this.endDate = plan.getEndDate();
         this.planImageUrl = plan.getPlanImageUrl();
+        this.isShared = (memberCount > 1) ? 2 : 1;
     }
 }

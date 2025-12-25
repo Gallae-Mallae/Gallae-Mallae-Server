@@ -60,8 +60,8 @@ public class PlanService {
         // plan_Members 테이블에 이 사용자 추가
         planMemberRepository.save(firstMember);
 
-        // inviteCode가 포함된 응답이 나감
-        return new PlanResponse(plan);
+        // inviteCode가 포함된 응답이 나감, 여행 생성 후는 1
+        return new PlanResponse(plan, 1);
     }
 
     private String getSeasonalImageUrl(LocalDate startDate) {
@@ -87,7 +87,12 @@ public class PlanService {
         // 내가 참여 중인 PlanMember 리스트 조회 -> Plan 정보 추출 -> DTO 변환
         // (PlanMemberRepository에 해당 메서드가 정의되어 있어야 함)
         return planMemberRepository.findByUser_UserIdAndLeftAtIsNullOrderByCreatedAtDesc(userId).stream()
-                .map(pm -> new PlanListResponse(pm.getPlan()))
+                .map(pm -> {
+                    Plan plan = pm.getPlan();
+                    // 해당 플랜의 전체 멤버 수 조회
+                    int memberCount = (int) planMemberRepository.countByPlan_PlanIdAndLeftAtIsNull(plan.getPlanId());
+                    return new PlanListResponse(plan, memberCount);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -144,6 +149,7 @@ public class PlanService {
                 .collect(Collectors.toList());
     }
 
+    // 여행 상세정보 조회
     @Transactional(readOnly = true)
     public PlanResponse getPlan(Long planId, Long userId) {
         Plan plan = planRepository.findById(planId)
@@ -154,7 +160,9 @@ public class PlanService {
             throw new IllegalArgumentException("조회 권한이 없습니다.");
         }
 
-        return new PlanResponse(plan);
+        int memberCount = (int) planMemberRepository.countByPlan_PlanIdAndLeftAtIsNull(planId);
+
+        return new PlanResponse(plan, memberCount);
     }
 
     // 여행 수정 (제목, 기간)
@@ -171,9 +179,10 @@ public class PlanService {
         // 데이터 수정
         plan.update(request.getTitle(), request.getStartDate(), request.getEndDate(), newSeasonalImageUrl);
 
+        int memberCount = (int) planMemberRepository.countByPlan_PlanIdAndLeftAtIsNull(planId);
+
         // [STOMP] PLAN_UPDATED 알림 전송
-        // 변경된 Plan 정보를 모두에게 발행
-        sendStompMessage(planId, "PLAN_UPDATED", new PlanResponse(plan));
+        sendStompMessage(planId, "PLAN_UPDATED", new PlanResponse(plan, memberCount));
     }
 
     @Transactional
