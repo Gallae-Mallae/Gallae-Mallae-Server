@@ -13,14 +13,16 @@ public class PlanResponse {
     private LocalDate endDate;
     private String planImageUrl;
     private String inviteCode; // 친구 초대용 코드
+    private Integer isShared;
 
     // Entity -> DTO 생성자
-    public PlanResponse(Plan plan) {
+    public PlanResponse(Plan plan, int memberCount) {
         this.planId = plan.getPlanId();
         this.title = plan.getTitle();
         this.startDate = plan.getStartDate();
         this.endDate = plan.getEndDate();
         this.planImageUrl = plan.getPlanImageUrl();
         this.inviteCode = plan.getInviteCode();
+        this.isShared = (memberCount > 1) ? 2 : 1;
     }
 }
