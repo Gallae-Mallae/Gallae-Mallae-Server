@@ -163,6 +163,21 @@ public class PlanService {
         sendStompMessage(planId, "PLAN_UPDATED", new PlanResponse(plan));
     }
 
+    @Transactional
+    public void deletePlan(Long planId, Long userId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+        }
+
+        planRepository.delete(plan);
+
+        sendStompMessage(planId, "PLAN_DELETED", planId);
+    }
+
     private void sendStompMessage(Long planId, String eventType, Object data) {
         Map<String, Object> message = new HashMap<>();
         message.put("event", eventType);

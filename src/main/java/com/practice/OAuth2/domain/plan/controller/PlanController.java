@@ -69,4 +69,14 @@ public class PlanController {
         planService.updatePlan(planId, request);
         return ResponseEntity.ok().build();
     }
+
+    // 여행 계획 삭제
+    @DeleteMapping("/{planId}")
+    public ResponseEntity<Void> deletePlan(
+            @PathVariable Long planId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        planService.deletePlan(planId, principal.getId());
+        return ResponseEntity.ok().build();
+    }
 }
