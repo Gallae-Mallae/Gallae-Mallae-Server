@@ -86,7 +86,7 @@ public class PlanService {
 
         // 내가 참여 중인 PlanMember 리스트 조회 -> Plan 정보 추출 -> DTO 변환
         // (PlanMemberRepository에 해당 메서드가 정의되어 있어야 함)
-        return planMemberRepository.findByUser_UserIdAndLeftAtIsNullOrderByCreatedAtDesc(userId).stream()
+        return planMemberRepository.findByUser_UserIdAndLeftAtIsNullAndPlan_DeletedAtIsNullOrderByCreatedAtDesc(userId).stream()
                 .map(pm -> {
                     Plan plan = pm.getPlan();
                     // 해당 플랜의 전체 멤버 수 조회
