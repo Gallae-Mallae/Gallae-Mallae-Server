@@ -144,6 +144,19 @@ public class PlanService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public PlanResponse getPlan(Long planId, Long userId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+
+        boolean isMember = planMemberRepository.existsByPlan_PlanIdAndUser_UserIdAndLeftAtIsNull(planId, userId);
+        if (!isMember) {
+            throw new IllegalArgumentException("조회 권한이 없습니다.");
+        }
+
+        return new PlanResponse(plan);
+    }
+
     // 여행 수정 (제목, 기간)
     @Transactional
     public void updatePlan(Long planId, PlanUpdateRequest request) {

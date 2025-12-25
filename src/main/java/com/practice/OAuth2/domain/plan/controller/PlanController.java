@@ -31,6 +31,15 @@ public class PlanController {
         return ResponseEntity.ok(response);
     }
 
+    // 여행 상세정보 조회
+    @GetMapping("/{planId}")
+    public ResponseEntity<PlanResponse> getPlan(
+            @PathVariable Long planId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(planService.getPlan(planId, principal.getId()));
+    }
+
     // 여행 목록 조회
     @GetMapping()
     public ResponseEntity<List<PlanListResponse>> getMyPlans(
