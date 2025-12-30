@@ -21,11 +21,13 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.practice.OAuth2.domain.plan.dto.ScheduleBlockResponse;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @RequiredArgsConstructor
-// 스케줄 블록을 옮겼을 때, publish 하기
+@Transactional
 public class ScheduleService {
 
     private final PlanRepository planRepository;
@@ -42,7 +44,7 @@ public class ScheduleService {
     // Redis Lock 키 접두사
     private static final String LOCK_PREFIX = "plan:lock:";
 
-    private final TransactionTemplate transactionTemplate;
+    //private final TransactionTemplate transactionTemplate;
 
     // 여행계획 스케줄 전체 블럭 조회
     @Transactional(readOnly = true)
@@ -90,26 +92,32 @@ public class ScheduleService {
         if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 시도");
 
         try {
-            // 개별 트랜잭션 시작
-            ScheduleBlockResponse response = transactionTemplate.execute(status -> {
-                Attraction attraction = null;
-                if (request.getAttractionId() != null) {
-                    attraction = attractionRepository.findById(request.getAttractionId()).orElse(null);
+            Attraction attraction = null;
+            if (request.getAttractionId() != null) {
+                attraction = attractionRepository.findById(request.getAttractionId()).orElse(null);
+            }
+
+            ScheduleBlock block = ScheduleBlock.builder()
+                    .plan(plan)
+                    .attraction(attraction)
+                    .day(request.getDay())
+                    .startTime(request.getStartTime())
+                    .endTime(request.getStartTime().plusMinutes(30))
+                    .title(request.getTitle())
+                    .build();
+
+            // DB 반영
+            scheduleBlockRepository.saveAndFlush(block);
+
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
+
+            // 커밋 후 알림 전송
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendStompMessage(planId, "BLOCK_CREATED", response);
                 }
-                ScheduleBlock block = ScheduleBlock.builder()
-                        .plan(plan).attraction(attraction)
-                        .day(request.getDay())
-                        .startTime(request.getStartTime())
-                        .endTime(request.getStartTime().plusMinutes(30))
-                        .title(request.getTitle()).build();
-
-                scheduleBlockRepository.save(block);
-
-                return new ScheduleBlockResponse(block);
             });
-            // [STOMP] 실시간 알림 : 생성된 블록 정보를 방 전체에 전송
-            sendStompMessage(planId, "BLOCK_CREATED", response);
-
         }finally{
             // lock 해제
             unlock(lockKey);
@@ -118,23 +126,25 @@ public class ScheduleService {
 
     // 블럭 크기 조절
     public void resizeScheduleBlock(Long blockId, LocalTime newEndTime) {
-        ScheduleBlock tempblock = scheduleBlockRepository.findById(blockId)
-                .orElseThrow(() -> new IllegalArgumentException("블록 x"));
-        Long planId = tempblock.getPlan().getPlanId();
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
+        Long planId = block.getPlan().getPlanId();
 
         String lockKey = LOCK_PREFIX + planId;
-        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 시도");
+        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
-            ScheduleBlockResponse response = transactionTemplate.execute(status -> {
-                ScheduleBlock block = scheduleBlockRepository.findById(blockId)
-                        .orElseThrow(() -> new IllegalArgumentException("블록 x"));
+            block.updateEndTime(newEndTime);
+            scheduleBlockRepository.saveAndFlush(block);
 
-                block.updateEndTime(newEndTime);
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
 
-                return new ScheduleBlockResponse(block);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendStompMessage(planId, "BLOCK_RESIZED", response);
+                }
             });
-            sendStompMessage(planId, "BLOCK_RESIZED", response);
         }finally{
             unlock(lockKey);
         }
@@ -142,28 +152,36 @@ public class ScheduleService {
 
     // 블럭 이동
     public void moveScheduleBlock(Long userId, Long blockId, Integer newDay, LocalTime newStartTime) {
-        ScheduleBlock tempblock = scheduleBlockRepository.findById(blockId)
-                .orElseThrow(() -> new IllegalArgumentException("블록 없음"));
-        Long planId = tempblock.getPlan().getPlanId();
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
 
+        Integer oldDay = block.getDay();
+        Long planId = block.getPlan().getPlanId();
         String lockKey = LOCK_PREFIX + planId;
-        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 시도");
+
+        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
-            ScheduleBlockResponse response = transactionTemplate.execute(status -> {
-                ScheduleBlock block = scheduleBlockRepository.findById(blockId)
-                        .orElseThrow(() -> new IllegalArgumentException("블록 없음"));
+            // 1. 데이터 변경
+            block.changePosition(newDay, newStartTime);
 
-                Integer oldDay = block.getDay();
-                block.changePosition(newDay, newStartTime);
+            // 2. DB 반영 (Flush)
+            scheduleBlockRepository.saveAndFlush(block);
 
-                ScheduleBlockResponse dto = new ScheduleBlockResponse(block);
-                dto.setFromDay(oldDay);
-                return dto;
+            // 3. 소켓 데이터 준비
+            Map<String, Object> socketData = new HashMap<>();
+            socketData.put("blockId", blockId);
+            socketData.put("fromDay", oldDay);
+            socketData.put("toDay", newDay);
+            socketData.put("blockDetail", new ScheduleBlockResponse(block));
+
+            // 4. 커밋 후 데이터 전송
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendStompMessage(planId, "BLOCK_MOVED", socketData);
+                }
             });
-
-            // 변경된 블럭 정보만 보내거나, 해당 날짜의 전체 리스트를 보내서 덮어씌우게 함
-            sendStompMessage(planId, "BLOCK_MOVED", response);
         }finally{
             unlock(lockKey);
         }
@@ -171,26 +189,25 @@ public class ScheduleService {
 
     // 블럭 삭제
     public void deleteScheduleBlock(Long userId, Long blockId) {
-        ScheduleBlock tempblock = scheduleBlockRepository.findById(blockId)
-                .orElseThrow(() -> new IllegalArgumentException("블록 x"));
-        Long planId = tempblock.getPlan().getPlanId();
+        ScheduleBlock block = scheduleBlockRepository.findById(blockId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 블록입니다."));
+        Long planId = block.getPlan().getPlanId();
 
         String lockKey = LOCK_PREFIX + planId;
-        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 시도");
+        if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
-            // 트랜잭션 시작
-            ScheduleBlockResponse response = transactionTemplate.execute(status -> {
-                ScheduleBlock block = scheduleBlockRepository.findById(blockId)
-                        .orElseThrow(() -> new IllegalArgumentException("블록 x"));
+            scheduleBlockRepository.delete(block);
+            scheduleBlockRepository.flush(); // 즉시 쿼리 수행
 
-                ScheduleBlockResponse dto = new ScheduleBlockResponse(block);
+            ScheduleBlockResponse response = new ScheduleBlockResponse(block);
 
-                scheduleBlockRepository.delete(block);
-
-                return dto;
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendStompMessage(planId, "BLOCK_DELETED", response);
+                }
             });
-            sendStompMessage(planId, "BLOCK_DELETED", response);
 
         } finally {
             unlock(lockKey);
