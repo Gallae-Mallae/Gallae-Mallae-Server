@@ -17,10 +17,12 @@ public class MemoResponse {
     // Entity -> DTO 변환 생성자
     public MemoResponse(Memo memo) {
         this.memoId = memo.getMemoId();
-        this.blockId = memo.getScheduleBlock().getBlockId();
+        if (memo.getScheduleBlock() != null) {
+            this.blockId = memo.getScheduleBlock().getBlockId();
+        }
         this.content = memo.getContent();
         this.linkUrl = memo.getLinkUrl();
         this.type = memo.getType();
-        this.orderIndex = memo.getOrderIndex();
+        this.orderIndex = (memo.getOrderIndex() != null) ? memo.getOrderIndex() : 0;
     }
 }
