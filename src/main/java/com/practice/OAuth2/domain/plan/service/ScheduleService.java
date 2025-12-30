@@ -92,6 +92,8 @@ public class ScheduleService {
         if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 시도");
 
         try {
+            registerUnlock(lockKey);
+
             Attraction attraction = null;
             if (request.getAttractionId() != null) {
                 attraction = attractionRepository.findById(request.getAttractionId()).orElse(null);
@@ -118,9 +120,9 @@ public class ScheduleService {
                     sendStompMessage(planId, "BLOCK_CREATED", response);
                 }
             });
-        }finally{
-            // lock 해제
+        }catch (Exception e) {
             unlock(lockKey);
+            throw e;
         }
     }
 
@@ -134,6 +136,8 @@ public class ScheduleService {
         if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
+            registerUnlock(lockKey);
+
             block.updateEndTime(newEndTime);
             scheduleBlockRepository.saveAndFlush(block);
 
@@ -145,8 +149,9 @@ public class ScheduleService {
                     sendStompMessage(planId, "BLOCK_RESIZED", response);
                 }
             });
-        }finally{
+        }catch (Exception e) {
             unlock(lockKey);
+            throw e;
         }
     }
 
@@ -162,6 +167,7 @@ public class ScheduleService {
         if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
+            registerUnlock(lockKey);
             // 1. 데이터 변경
             block.changePosition(newDay, newStartTime);
 
@@ -182,8 +188,9 @@ public class ScheduleService {
                     sendStompMessage(planId, "BLOCK_MOVED", socketData);
                 }
             });
-        }finally{
+        }catch (Exception e) {
             unlock(lockKey);
+            throw e;
         }
     }
 
@@ -197,6 +204,8 @@ public class ScheduleService {
         if (!tryLock(lockKey)) throw new IllegalStateException("잠시 후 다시 시도해주세요.");
 
         try {
+            registerUnlock(lockKey);
+
             scheduleBlockRepository.delete(block);
             scheduleBlockRepository.flush(); // 즉시 쿼리 수행
 
@@ -209,8 +218,9 @@ public class ScheduleService {
                 }
             });
 
-        } finally {
+        }catch (Exception e) {
             unlock(lockKey);
+            throw e;
         }
     }
 
@@ -238,5 +248,15 @@ public class ScheduleService {
     // redis lock 제거
     private void unlock(String key) {
         redisTemplate.delete(key);
+    }
+
+    // 트랜잭션이 끝나면(성공이든 실패든) 무조건 락을 푸는 헬퍼 메서드
+    private void registerUnlock(String key) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                unlock(key);
+            }
+        });
     }
 }
