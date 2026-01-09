@@ -3,24 +3,74 @@ services:    # 컨테이너를 정의하는 서비스라고 선언
   server1:
     container_name: server1 # 컨테이너 이름을 지정
     image: 291234479386.dkr.ecr.ap-northeast-2.amazonaws.com/gallaemallae:latest # ECR 이미지 경로/이미지명:태그
-    ports:
-      - 8081:8080
-    volumes:
-      # 애플리케이션 로그를 호스트에 저장 (명명된 볼륨)
-      - /home/ubuntu/docker/server1/logs:/app/logs
+    restart: always
     networks:
       - my-network
+    depends_on:
+      - db-server
+      - cache-server
 
   server2:
     container_name: server2
     image: 291234479386.dkr.ecr.ap-northeast-2.amazonaws.com/gallaemallae:latest # ECR 이미지 경로/이미지명:태그
-    ports:
-      - 8082:8080
-    volumes:
-      # 애플리케이션 로그를 호스트에 저장
-      - /home/ubuntu/docker/server2/logs:/app/logs
+    restart: always
     networks:
       - my-network
+    depends_on:
+      - db-server
+      - cache-server
+
+  cache-server:
+    container_name: cache-server
+    image: redis
+    command: redis-server --appendonly yes # 모든 쓰기 작업을 로그 파일에 기록하여 컨테이너가 재시작되어도 기존 데이터가 날아가지 않고 그대로 복구됨
+    restart: always
+    volumes:
+      - redis_data:/data # 명명된 볼륨(앞에 경로 ./ 안붙임), 도커 내부에서 확인 가능, 로컬에 파일 생성 안됨 (가상의 리눅스 공간에 저장)
+    networks:
+      - my-network
+
+  db-server:
+    container_name: db-server
+    image: mysql:8.0
+    command: --ngram_token_size=1 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1243   # 루트 비밀번호
+      MYSQL_DATABASE: gmdb        # 1. 'gmdb'라는 데이터베이스라고 설정 (없다면 생성)
+      MYSQL_USER: admin2          # 2. 'admin2'라는 유저 설정 (없다면 생성)
+      MYSQL_PASSWORD: 1243        # 3. 'admin2'의 비밀번호 설정 (없다면 생성)
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my-network
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - my-network
+    depends_on:
+      - server1
+      - server2
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'" # 12시간마다 인증서 관리
 
 # 사용할 네트워크를 명시적으로 정의
 networks:
