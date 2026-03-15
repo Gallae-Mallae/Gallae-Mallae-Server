@@ -37,40 +37,39 @@
 ## 팀원 소개
 
 <div align="center">
-<table width="100%">
-<tr>
-<td align="center">
-<a href="[https://github.com/SHSong99](https://www.google.com/search?q=https://github.com/SHSong99)">
-<img src="[https://avatars.githubusercontent.com/SHSong99](https://www.google.com/search?q=https://avatars.githubusercontent.com/SHSong99)" width="100px;" alt=""/><br />
-<sub><b>송성현</b></sub>
-</a><br />
-Infra
-</td>
-<td align="center">
-<a href="[https://github.com/theundergroundt](https://www.google.com/search?q=https://github.com/theundergroundt)">
-<img src="[https://avatars.githubusercontent.com/theundergroundt](https://www.google.com/search?q=https://avatars.githubusercontent.com/theundergroundt)" width="100px;" alt=""/><br />
-<sub><b>김상지</b></sub>
-</a><br />
-Backend
-</td>
-<td align="center">
-<a href="[https://github.com/DooDooLee](https://www.google.com/search?q=https://github.com/DooDooLee)">
-<img src="[https://avatars.githubusercontent.com/DooDooLee](https://www.google.com/search?q=https://avatars.githubusercontent.com/DooDooLee)" width="100px;" alt=""/><br />
-<sub><b>이승엽</b></sub>
-</a><br />
-Backend
-</td>
-<td align="center">
-<a href="[https://github.com/zwongraphic](https://www.google.com/search?q=https://github.com/zwongraphic)">
-<img src="[https://avatars.githubusercontent.com/zwongraphic](https://www.google.com/search?q=https://avatars.githubusercontent.com/zwongraphic)" width="100px;" alt=""/><br />
-<sub><b>이지원</b></sub>
-</a><br />
-Frontend
-</td>
-</tr>
-</table>
+  <table width="100%">
+    <tr>
+      <td align="center">
+        <a href="https://github.com/SHSong99">
+          <img src="https://github.com/SHSong99.png" width="100px;" alt="송성현 프로필"/><br />
+          <sub><b>송성현</b></sub>
+        </a><br />
+        Infra
+      </td>
+      <td align="center">
+        <a href="https://github.com/theundergroundt">
+          <img src="https://github.com/theundergroundt.png" width="100px;" alt="김상지 프로필"/><br />
+          <sub><b>김상지</b></sub>
+        </a><br />
+        Backend
+      </td>
+      <td align="center">
+        <a href="https://github.com/DooDooLee">
+          <img src="https://github.com/DooDooLee.png" width="100px;" alt="이승엽 프로필"/><br />
+          <sub><b>이승엽</b></sub>
+        </a><br />
+        Backend
+      </td>
+      <td align="center">
+        <a href="https://github.com/zwongraphic">
+          <img src="https://github.com/zwongraphic.png" width="100px;" alt="이지원 프로필"/><br />
+          <sub><b>이지원</b></sub>
+        </a><br />
+        Frontend
+      </td>
+    </tr>
+  </table>
 </div>
-
 
 
 
