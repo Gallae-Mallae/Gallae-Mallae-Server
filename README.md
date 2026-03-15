@@ -36,21 +36,40 @@
 
 ## 팀원 소개
 
-| **송성현 (Infra)** |
-| --- |
-| • GitHub: [@SHSong99](https://www.google.com/search?q=https://github.com/SHSong99) |
-
-| **김상지 (Backend)** |
-| --- |
-| • GitHub: [@theundergroundt](https://www.google.com/search?q=https://github.com/theundergroundt) |
-
-| **이승엽 (Backend)** |
-| --- |
-| • GitHub: [@DooDooLee](https://www.google.com/search?q=https://github.com/DooDooLee) |
-
-| **이지원 (Frontend)** |
-| --- |
-| • GitHub: [@zwongraphic](https://www.google.com/search?q=https://github.com/zwongraphic) |
+<div align="center">
+<table width="100%">
+<tr>
+<td align="center">
+<a href="[https://github.com/SHSong99](https://www.google.com/search?q=https://github.com/SHSong99)">
+<img src="[https://avatars.githubusercontent.com/SHSong99](https://www.google.com/search?q=https://avatars.githubusercontent.com/SHSong99)" width="100px;" alt=""/><br />
+<sub><b>송성현</b></sub>
+</a><br />
+Infra
+</td>
+<td align="center">
+<a href="[https://github.com/theundergroundt](https://www.google.com/search?q=https://github.com/theundergroundt)">
+<img src="[https://avatars.githubusercontent.com/theundergroundt](https://www.google.com/search?q=https://avatars.githubusercontent.com/theundergroundt)" width="100px;" alt=""/><br />
+<sub><b>김상지</b></sub>
+</a><br />
+Backend
+</td>
+<td align="center">
+<a href="[https://github.com/DooDooLee](https://www.google.com/search?q=https://github.com/DooDooLee)">
+<img src="[https://avatars.githubusercontent.com/DooDooLee](https://www.google.com/search?q=https://avatars.githubusercontent.com/DooDooLee)" width="100px;" alt=""/><br />
+<sub><b>이승엽</b></sub>
+</a><br />
+Backend
+</td>
+<td align="center">
+<a href="[https://github.com/zwongraphic](https://www.google.com/search?q=https://github.com/zwongraphic)">
+<img src="[https://avatars.githubusercontent.com/zwongraphic](https://www.google.com/search?q=https://avatars.githubusercontent.com/zwongraphic)" width="100px;" alt=""/><br />
+<sub><b>이지원</b></sub>
+</a><br />
+Frontend
+</td>
+</tr>
+</table>
+</div>
 
 
 
@@ -99,15 +118,15 @@
 
 ### 🎨 Frontend
 
-<img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
+<img src="[https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)"> <img src="[https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)">
 
 ### 💻 Backend
 
-<img src="https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=openjdk&logoColor=white"> <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+<img src="[https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white](https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)"> <img src="[https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=openjdk&logoColor=white](https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=openjdk&logoColor=white)"> <img src="[https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)">
 
 ### ⚙️ DevOps
 
-<img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"> <img src="https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white"> <img src="https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white">
+<img src="[https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)"> <img src="[https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)"> <img src="[https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white](https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white)">
 
 
 
