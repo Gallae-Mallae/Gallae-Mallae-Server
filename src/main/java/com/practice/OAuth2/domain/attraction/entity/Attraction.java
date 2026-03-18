@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -39,9 +40,11 @@ public class Attraction extends BaseEntity {
     })
     private Gugun gugun;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "content_type_id")
-    private ContentType contentType;
+    @Column(name = "content_type_id")
+    private Integer contentTypeId;
+
+    @Column(name = "content_type_name", length = 45)
+    private String contentTypeName;
 
     @Column(length = 500)
     private String title;

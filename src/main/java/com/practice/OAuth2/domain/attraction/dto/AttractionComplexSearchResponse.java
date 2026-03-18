@@ -1,6 +1,7 @@
 package com.practice.OAuth2.domain.attraction.dto;
 
 import com.practice.OAuth2.domain.attraction.entity.Attraction;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,43 +9,28 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttractionResponse2 {
-
+public class AttractionComplexSearchResponse {
     private Integer attractionId;
-    private Integer count;
     private String title;
-    private Double latitude;
-    private Double longitude;
-
     private String address;
     private String imageUrl;
-
-    // viewCount, likeCount, contentTypeId는 용량이 작고 유용하니 유지 추천!
+    private Integer contentTypeId;
     private Long viewCount;
     private Long likeCount;
-    private Integer contentTypeId;
+    private LocalDateTime createdAt;
+    private String sidoName;
+    private String gugunName;
 
-
-
-    public AttractionResponse2(Attraction attraction) {
+    public AttractionComplexSearchResponse(Attraction attraction) {
         this.attractionId = attraction.getAttrId();
         this.title = attraction.getTitle();
         this.address = attraction.getAddr1();
         this.imageUrl = attraction.getFirstImage1();
-        this.count = 1;
-
         this.viewCount = attraction.getViewCount();
         this.likeCount = attraction.getLikeCount();
-
-
-
+        this.createdAt = attraction.getCreatedAt();
         this.contentTypeId = attraction.getContentTypeId();
-
-        if (attraction.getLatitude() != null) {
-            this.latitude = attraction.getLatitude().doubleValue();
-        }
-        if (attraction.getLongitude() != null) {
-            this.longitude = attraction.getLongitude().doubleValue();
-        }
+        this.sidoName = (attraction.getSido() != null) ? attraction.getSido().getSidoName() : null;
+        this.gugunName = (attraction.getGugun() != null) ? attraction.getGugun().getGugunName() : null;
     }
 }

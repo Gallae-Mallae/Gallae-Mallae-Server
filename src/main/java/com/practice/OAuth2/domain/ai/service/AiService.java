@@ -63,7 +63,7 @@ public class AiService {
         // [Step 6] 프롬프트 데이터 구성 (GPT가 읽을 정보)
         String context = candidates.stream()
                 .map(p -> {
-                    String category = (p.getContentType() != null) ? p.getContentType().getContentTypeName() : "기타";
+                    String category = (p.getContentTypeName() != null) ? p.getContentTypeName() : "기타";
                     return String.format("- ID: %d | [지역: %s / 분류: %s] %s\n  설명: %s",
                             p.getAttrId(), p.getAddr1(), category, p.getTitle(), p.getOverview());
                 })
@@ -153,7 +153,7 @@ public class AiService {
                 List<String> idList = new ArrayList<>();
 
                 for (Attraction attr : attractions) {
-                    String category = (attr.getContentType() != null) ? attr.getContentType().getContentTypeName() : "기타";
+                    String category = (attr.getContentTypeName() != null) ? attr.getContentTypeName() : "기타";
                     String address = (attr.getAddr1() != null) ? attr.getAddr1() : "";
                     String overview = (attr.getOverview() != null) ? attr.getOverview() : "";
 

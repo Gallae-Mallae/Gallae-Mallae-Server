@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(./gradlew compileJava 2>&1 | tail -20)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

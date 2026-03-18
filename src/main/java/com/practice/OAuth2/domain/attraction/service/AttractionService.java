@@ -1,5 +1,7 @@
 package com.practice.OAuth2.domain.attraction.service;
 
+import com.practice.OAuth2.domain.attraction.dto.AttractionComplexSearchRequest;
+import com.practice.OAuth2.domain.attraction.dto.AttractionComplexSearchResponse;
 import com.practice.OAuth2.domain.attraction.dto.AttractionRequest;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse;
 import com.practice.OAuth2.domain.attraction.dto.AttractionResponse2;
@@ -8,6 +10,8 @@ import com.practice.OAuth2.domain.attraction.mapper.AttractionMapper;
 import com.practice.OAuth2.domain.attraction.repository.AttractionRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -147,6 +151,19 @@ public class AttractionService {
                             attractionRepository.incrementLikeCount(attractionId);
                         }
                 );
+    }
+
+    // 복합 조건 관광지 검색
+    @Transactional(readOnly = true)
+    public Page<AttractionComplexSearchResponse> complexSearch(AttractionComplexSearchRequest request) {
+        PageRequest pageRequest = PageRequest.of(request.getPage(), request.getSize());
+
+        return attractionRepository.findByComplexCondition(
+                request.getDate(),
+                request.getContentTypeId(),
+                request.getMinLikeCount(),
+                pageRequest
+        ).map(AttractionComplexSearchResponse::new);
     }
 
     @Transactional(readOnly = true)

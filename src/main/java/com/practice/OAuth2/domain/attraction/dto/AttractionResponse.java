@@ -33,10 +33,7 @@ public class AttractionResponse {
         this.likeCount = attraction.getLikeCount();
         this.overview = attraction.getOverview();
 
-        // ContentType ID 추출 (Null Check 필수)
-        if (attraction.getContentType() != null) {
-            this.contentTypeId = attraction.getContentType().getContentTypeId();
-        }
+        this.contentTypeId = attraction.getContentTypeId();
 
         // BigDecimal -> Double
         if (attraction.getLatitude() != null) {

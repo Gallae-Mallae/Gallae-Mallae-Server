@@ -90,6 +90,7 @@ public class SecurityConfig {
                 // 👇 기존 허용 경로들
                 .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
                 .requestMatchers("/api/attractions/map/**", "/api/attractions/map").permitAll()
+                .requestMatchers("/api/attractions/complex-search/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .anyRequest()
                 .authenticated()
