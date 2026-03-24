@@ -1,4 +1,4 @@
-# ✈️ 갈래말래 (Gallae-Mallae)
+# ✈️ 갈래말래 (Gallae-Mallae) Server
 
 <div align="center">
 
@@ -10,31 +10,25 @@
 
 </div>
 
+---
 
-
-
-
-## 프로젝트 소개
+## 🌟 프로젝트 소개
 
 여행을 계획할 때마다 쏟아지는 정보와 친구들 간의 의견 조율로 지치신 적 없으신가요? **갈래말래**는 여행 준비 과정의 피로도를 낮추고 즐거움을 극대화하기 위해 기획되었습니다.
 
-* **AI 맞춤 여행지 추천:** RAG 기반 챗봇을 통해 내 취향에 딱 맞는 여행지와 코스를 제안받을 수 있습니다.
-* **실시간 협업 플래너:** 초대 코드 하나로 친구들을 모으고, 실시간으로 일정 블록을 이동하며 함께 시간표를 완성합니다.
-* **편리한 장소 수집:** 지도 클러스터링을 통해 직관적으로 장소를 탐색하고, 나만의 폴더와 스크랩북에 쉽게 저장하세요.
+* **🤖 AI 맞춤 여행지 추천:** Pinecone 벡터 DB와 RAG(Retrieval-Augmented Generation) 기반 챗봇을 통해 내 취향에 딱 맞는 여행지와 코스를 제안받을 수 있습니다.
+* **🤝 실시간 협업 플래너:** WebSocket(STOMP)을 통해 초대 코드 하나로 친구들을 모으고, 실시간으로 일정 블록을 이동하며 함께 시간표를 완성합니다.
+* **🗺️ 대규모 장소 탐색:** Geohashing 기반 공간 인덱싱 및 클러스터링을 통해 전국 약 25만 개의 장소 데이터를 지연 없이 탐색하세요.
+* **📁 스마트 스크랩:** Jsoup을 활용한 메타데이터 크롤링으로 링크만 붙여넣어도 미리보기가 포함된 스크랩북을 만들 수 있습니다.
 
+---
 
+## 📅 프로젝트 기간
+* **2024.01 ~ 2024.02** (약 5주)
 
+---
 
-
-## 프로젝트 기간
-
-* 202X-XX-XX ~ 202X-XX-XX
-
-
-
-
-
-## 팀원 소개
+## 👥 팀원 소개
 
 <div align="center">
   <table width="100%">
@@ -44,21 +38,21 @@
           <img src="https://github.com/SHSong99.png" width="100px;" alt="송성현 프로필"/><br />
           <sub><b>송성현</b></sub>
         </a><br />
-        Infra
+        Infra & DevOps
       </td>
       <td align="center">
         <a href="https://github.com/theundergroundt">
           <img src="https://github.com/theundergroundt.png" width="100px;" alt="김상지 프로필"/><br />
           <sub><b>김상지</b></sub>
         </a><br />
-        Backend
+        Backend (Auth/Plan)
       </td>
       <td align="center">
         <a href="https://github.com/DooDooLee">
           <img src="https://github.com/DooDooLee.png" width="100px;" alt="이승엽 프로필"/><br />
           <sub><b>이승엽</b></sub>
         </a><br />
-        Backend
+        Backend (Search/AI)
       </td>
       <td align="center">
         <a href="https://github.com/zwongraphic">
@@ -71,87 +65,123 @@
   </table>
 </div>
 
-
-
-
-## 주요 기능
-
-### 🔐 1. 사용자 인증 및 관리
-
-* **카카오 소셜 로그인:** 빠르고 간편한 회원가입 및 로그인 지원
-* **보안 강화:** JWT 기반의 Access/Refresh Token을 통한 권한 관리 및 토큰 재발급
-* **마이페이지:** 프로필 조회 및 닉네임 변경
-
-### 🤖 2. AI 여행 추천 챗봇
-
-* **취향 맞춤 대화:** 채팅 인터페이스를 통해 사용자의 선호도를 파악하고 최적의 여행지 및 코스 추천
-
-### 🗺️ 3. 지도 및 장소 탐색
-
-* **직관적인 장소 검색:** 키워드 입력을 통해 원하는 장소를 빠르게 탐색하고, 검색 결과를 지도 위 마커와 사이드바 리스트로 한눈에 확인
-* **대규모 데이터 클러스터링:** 전국 약 25만 개의 장소 데이터를 지오해싱(Geohashing) 기반 공간 인덱싱으로 최적화하여, 지연 없는 실시간 클러스터링 구현
-* **원활한 지도 탐색:** 지도의 줌 인/아웃 및 화면 이동 시 조건에 맞는 마커를 즉각적으로 재렌더링하여 끊김 없는 사용자 경험(UX) 제공
-* **상세 정보 및 좋아요:** 장소 클릭 시 주소, 영업시간, 리뷰 등 세부 정보를 제공하며, 마음에 드는 장소는 '좋아요' 처리 후 별도 목록으로 관리
-
-### 📁 4. 스크랩 및 폴더 관리
-
-* **체계적인 저장소:** 관광지 및 여행 스크랩을 분류할 수 있는 폴더 관리(생성/조회/수정/삭제)
-* **쉬운 콘텐츠 수집:** 폴더 내 관광지 추가 및 텍스트/링크 스크랩(이미지 미리보기 지원)
-
-### 🗓️ 5. 실시간 여행 계획 및 일정 조율 (협업)
-
-* **그룹 플래닝:** 초대 코드를 통한 여행 계획 그룹 참여 및 실시간 참여자 목록 확인
-* **타임라인 기반 스케줄링:** 여행 기간(Day N)별 상세 시간표 및 스케줄 블록 생성
-* **드래그 앤 드롭:** 스케줄 블록 이동 및 소요 시간 확대/축소를 통한 직관적인 일정 변경
-
-### 📝 6. 여행 메모
-
-* **계획 내 메모장:** 여행 계획이나 장소/일정에 관련된 텍스트 메모 작성, 수정, 삭제 및 순서 변경
-
-
-
-
+---
 
 ## 🛠️ 기술 스택
 
-<a name="stack"></a>
+### 💻 Backend
+* **Language:** Java 17
+* **Framework:** Spring Boot 3.0.5
+* **Security:** Spring Security, OAuth2 Client, JWT (jjwt)
+* **Data:** Spring Data JPA, MyBatis (For Complex Search), MySQL 8.0
+* **Caching & Concurrency:** Redis (Redisson)
+* **Real-time:** WebSocket (STOMP), SockJS
+* **AI:** Pinecone (Vector DB), RAG implementation
+* **External:** AWS S3 (Spring Cloud AWS), Jsoup (Metadata Scraping)
 
 ### 🎨 Frontend
-
-<img src="[https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)"> <img src="[https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)">
-
-### 💻 Backend
-
-<img src="[https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white](https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)"> <img src="[https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=openjdk&logoColor=white](https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=openjdk&logoColor=white)"> <img src="[https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)">
+* **Core:** React, Vite, TypeScript
+* **State Management:** Zustand
+* **Map:** Kakao Maps API
+* **Communication:** Axios, STOMP.js
 
 ### ⚙️ DevOps
+* **CI/CD:** GitHub Actions, Docker, AWS EC2, S3, CodeDeploy
 
-<img src="[https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)"> <img src="[https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)"> <img src="[https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white](https://img.shields.io/badge/AWS%20EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white)">
+---
 
-
-
-
-
-## Project Documents
-
-| 문서명 | 링크 |
-| --- | --- |
-| 요구사항 명세서 | [바로가기](https://www.google.com/search?q=%23) |
-| API 명세서 | [바로가기](https://www.google.com/search?q=%23) |
-
-
-
-
-
-## Data Modeling
-
-<img src="assets/images/erd.png" width="100%"/>
-
-
-
-
-
-## 시스템 아키텍처
-
+## 🏗️ 시스템 아키텍처
 <img src="assets/images/architecture.png" width="100%"/>
 
+---
+
+## 📂 프로젝트 구조
+```text
+src/main/java/com/practice/OAuth2/
+├── domain/
+│   ├── ai/          # RAG 기반 AI 추천 서비스 (Pinecone 연동)
+│   ├── attraction/  # 관광지 검색, 클러스터링, 좋아요 및 폴더 관리
+│   ├── auth/        # JWT 기반 인증, 토큰 재발급, 로그아웃
+│   ├── plan/        # 여행 계획 및 실시간 협업 스케줄링 (WebSocket)
+│   ├── scrap/       # 외부 링크/텍스트 스크랩 및 메타데이터 추출
+│   └── user/        # 사용자 프로필 관리 및 권한
+├── global/
+│   ├── common/      # 공통 Response 및 BaseEntity
+│   ├── config/      # Redis, Security, WebSocket, S3 설정
+│   ├── exception/   # 전역 예외 처리 (GlobalExceptionHandler)
+│   ├── security/    # JWT 필터 및 UserPrincipal
+│   └── util/        # Cookie, Token 관리 유틸리티
+└── resources/
+    └── mapper/      # MyBatis XML 매퍼 (관광지 검색 최적화)
+```
+
+---
+
+## 📌 주요 API 엔드포인트
+
+| 도메인 | 엔드포인트 | 설명 |
+| --- | --- | --- |
+| **Auth** | `POST /api/auth/reissue` | JWT 액세스 토큰 재발급 |
+| **Plan** | `POST /api/plans` | 신규 여행 계획 생성 |
+| **Plan** | `POST /api/plans/join` | 초대 코드로 여행 계획 참여 |
+| **Schedule** | `PATCH /api/schedules/{id}/position` | 일정 블록 이동 (실시간 동기화) |
+| **Attraction**| `GET /api/attractions/map` | 지도 마커 및 클러스터 데이터 조회 |
+| **AI** | `GET /api/ai/chat` | AI 챗봇 맞춤 추천 대화 |
+| **Scrap** | `POST /api/scraps` | 외부 링크 스크랩 및 메타데이터 저장 |
+
+---
+
+## ⚙️ 시작 가이드
+
+### 환경 변수 설정 (`application.yml`)
+`src/main/resources/application.yml` 파일을 생성하고 아래 형식을 참조하여 작성하세요.
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://{HOST}:3306/gallae_mallae
+    username: {USERNAME}
+    password: {PASSWORD}
+  redis:
+    host: {REDIS_HOST}
+    port: 6379
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: {KAKAO_CLIENT_ID}
+            client-secret: {KAKAO_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+
+cloud:
+  aws:
+    credentials:
+      access-key: {AWS_ACCESS_KEY}
+      secret-key: {AWS_SECRET_KEY}
+    s3:
+      bucket: {BUCKET_NAME}
+
+app:
+  auth:
+    tokenSecret: {JWT_SECRET}
+    tokenExpirationMsec: 1800000 # 30 mins
+  oauth2:
+    authorizedRedirectUris:
+      - http://localhost:3000/oauth2/redirect
+```
+
+### 실행 방법
+```bash
+# 빌드
+./gradlew build
+
+# 실행
+java -jar build/libs/OAuth2-0.0.1-SNAPSHOT.jar
+```
+
+---
+
+## 📊 ERD (Entity Relationship Diagram)
+<img src="assets/images/erd.png" width="100%"/>
