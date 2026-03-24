@@ -37,29 +37,25 @@
         <a href="https://github.com/SHSong99">
           <img src="https://github.com/SHSong99.png" width="100px;" alt="송성현 프로필"/><br />
           <sub><b>송성현</b></sub>
-        </a><br />
-        Infra & DevOps
+        </a>
       </td>
       <td align="center">
         <a href="https://github.com/theundergroundt">
           <img src="https://github.com/theundergroundt.png" width="100px;" alt="김상지 프로필"/><br />
           <sub><b>김상지</b></sub>
-        </a><br />
-        Backend (Auth/Plan)
+        </a>
       </td>
       <td align="center">
         <a href="https://github.com/DooDooLee">
           <img src="https://github.com/DooDooLee.png" width="100px;" alt="이승엽 프로필"/><br />
           <sub><b>이승엽</b></sub>
-        </a><br />
-        Backend (Search/AI)
+        </a>
       </td>
       <td align="center">
         <a href="https://github.com/zwongraphic">
           <img src="https://github.com/zwongraphic.png" width="100px;" alt="이지원 프로필"/><br />
           <sub><b>이지원</b></sub>
-        </a><br />
-        Frontend
+        </a>
       </td>
     </tr>
   </table>
@@ -170,15 +166,6 @@ app:
   oauth2:
     authorizedRedirectUris:
       - http://localhost:3000/oauth2/redirect
-```
-
-### 실행 방법
-```bash
-# 빌드
-./gradlew build
-
-# 실행
-java -jar build/libs/OAuth2-0.0.1-SNAPSHOT.jar
 ```
 
 ---
