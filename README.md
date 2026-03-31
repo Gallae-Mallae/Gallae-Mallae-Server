@@ -170,5 +170,4 @@ app:
 
 ---
 
-## 📊 ERD (Entity Relationship Diagram)
-<img src="assets/images/erd.png" width="100%"/>
+
