@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="assets/main.png" width="300"/>
+<img src="assets/main.png" width="600"/>
 
 ### **"AI 추천부터 실시간 일정 조율까지, 함께 그리는 완벽한 여행"**
 
